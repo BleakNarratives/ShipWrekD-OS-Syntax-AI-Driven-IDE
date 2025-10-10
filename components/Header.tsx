@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ filePath, onCommandPaletteClick,
           className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-[var(--color-primary-bg-hover)] transition-colors"
           title="Blue Sky Meeting"
         >
-          <Icon name="users" className="w-5 h-5 text-blue-300" />
+          <Icon name="mindmap" className="w-6 h-6 text-blue-300" />
         </button>
       </div>
     </header>

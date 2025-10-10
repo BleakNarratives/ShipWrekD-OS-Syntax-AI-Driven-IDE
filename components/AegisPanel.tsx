@@ -51,15 +51,15 @@ export const AegisPanel: React.FC<AegisPanelProps> = ({ status, logs, components
     <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
       <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">Aegis Protocol</h2>
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="p-4 border-b border-gray-700/50 text-center">
-            <Icon name={currentStatus.icon} className={`w-12 h-12 mx-auto mb-2 ${currentStatus.color} ${status === 'scanning' ? 'animate-pulse' : ''}`} />
-            <h3 className={`font-bold ${currentStatus.color}`}>{currentStatus.text}</h3>
-            <p className="text-xs text-gray-500 mt-1">{currentStatus.description}</p>
-        </div>
+        <div className="flex-1 p-2 overflow-y-auto space-y-4">
+            <div className="p-3 bg-[#161b22] border border-gray-700/50 rounded-lg text-center">
+                <Icon name={currentStatus.icon} className={`w-12 h-12 mx-auto mb-2 ${currentStatus.color} ${status === 'scanning' ? 'animate-pulse' : ''}`} />
+                <h3 className={`font-bold ${currentStatus.color}`}>{currentStatus.text}</h3>
+                <p className="text-xs text-gray-500 mt-1">{currentStatus.description}</p>
+            </div>
 
-        <div className="flex-1 p-2 overflow-y-auto">
             {logs.length > 0 && (
-                 <div className="mb-4">
+                 <div className="p-3 bg-[#161b22] border border-gray-700/50 rounded-lg">
                     <h4 className="text-xs uppercase text-gray-400 font-bold px-1 mb-2">Threat Logs</h4>
                     <ul className="space-y-2">
                         {logs.map(log => (
@@ -78,7 +78,7 @@ export const AegisPanel: React.FC<AegisPanelProps> = ({ status, logs, components
                 </div>
             )}
 
-            <div>
+            <div className="p-3 bg-[#161b22] border border-gray-700/50 rounded-lg">
                 <h4 className="text-xs uppercase text-gray-400 font-bold px-1 mb-2">Monitored Components</h4>
                 <ul className="space-y-1">
                     {components.map(comp => (

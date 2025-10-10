@@ -18,7 +18,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ engineTier }) => {
   const engineInfo = engineInfoMap[engineTier];
 
   return (
-    <footer className="bg-[var(--color-bg-surface)] border-l border-[var(--color-border-base)] px-4 h-16 flex items-center justify-between text-xs text-gray-400 flex-1">
+    <footer className="bg-[var(--color-bg-surface)] border-t border-[var(--color-border-base)] px-4 h-8 flex items-center justify-between text-xs text-gray-400 flex-shrink-0">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1">
           <Icon name="gitBranch" className="w-4 h-4" />

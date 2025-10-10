@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import type { Message, Suggestion, OrchestrationPlan, VocalState } from '../types';
 import { Icon, IconName } from './Icon';
@@ -91,169 +92,222 @@ const ChatMessage: React.FC<{ message: Message; onApplyCode: (code: string) => v
                         <img src={`data:${message.image.mimeType};base64,${message.image.data}`} alt="User upload" className="max-w-xs max-h-48 rounded" />
                     </div>
                 )}
-                 {isModel && message.responseType === 'orchestration' && message.orchestrationPlan && (
-                    <OrchestrationProgress plan={message.orchestrationPlan} />
-                )}
-                {isModel && message.responseType === 'code_generation' && message.filename && message.code && (
-                     <div className="mt-2 w-full max-w-sm">
-                        <div className="bg-[#282c34] rounded-md overflow-hidden border border-gray-700">
-                            <pre className="p-2 text-xs max-h-48 overflow-auto"><code ref={codeRef} className="language-tsx">{message.code}</code></pre>
-                        </div>
-                        <button 
-                            onClick={() => onCreateFile(message.filename!, message.code!)}
-                            className="mt-2 px-3 py-1 bg-green-600/50 text-green-300 rounded hover:bg-green-600/70 transition-colors text-xs flex items-center gap-2"
-                        >
-                            <Icon name="addFile" className="w-4 h-4" />
-                            Create file: {message.filename}
-                        </button>
-                    </div>
-                )}
-                {isModel && message.responseType === 'explanation' && extractedCodeFromExplanation && (
-                     <button 
-                        onClick={() => onApplyCode(extractedCodeFromExplanation)}
-                        className="mt-2 px-3 py-1 bg-green-600/50 text-green-300 rounded hover:bg-green-600/70 transition-colors text-xs flex items-center gap-2"
-                    >
-                        <Icon name="check" className="w-4 h-4" />
-                        Apply to Editor
-                    </button>
-                )}
             </div>
         </div>
     );
 };
 
-export const Assistant: React.FC<AssistantProps> = ({ messages, suggestions, onSendMessage, onApplyCode, onCreateFile, isLoading, onConsultBaron, hasNewBaronDirective, vocalState, onToggleListening }) => {
+// FIX: Added the missing Assistant component to resolve the export error.
+export const Assistant: React.FC<AssistantProps> = ({
+  messages,
+  suggestions,
+  onSendMessage,
+  onApplyCode,
+  onCreateFile,
+  isLoading,
+  onConsultBaron,
+  hasNewBaronDirective,
+  vocalState,
+  onToggleListening,
+}) => {
   const [input, setInput] = useState('');
-  const [attachedImage, setAttachedImage] = useState<Message['image'] | null>(null);
+  const [image, setImage] = useState<Message['image'] | undefined>(undefined);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if(input.trim() || attachedImage){
-      onSendMessage(input, attachedImage || undefined);
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+            setIsExportMenuOpen(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSend = () => {
+    if (input.trim() || image) {
+      onSendMessage(input, image);
       setInput('');
-      setAttachedImage(null);
+      setImage(undefined);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
-  const handleConsult = () => {
-    if (input.trim()) {
-        onConsultBaron(input);
-        setInput('');
-        setAttachedImage(null);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = (reader.result as string).split(',')[1];
-        setAttachedImage({ mimeType: file.type, data: base64String });
+      reader.onload = (event) => {
+        const base64String = (event.target?.result as string).split(',')[1];
+        if (base64String) {
+          setImage({
+            mimeType: file.type,
+            data: base64String,
+          });
+        }
       };
       reader.readAsDataURL(file);
     }
   };
   
-  // FIX: Explicitly type the return value of this function to ensure the `icon` property
-  // is inferred as the specific `IconName` type, not the general `string` type.
-  const getVocalButtonUI = (): { icon: IconName; color: string; title: string; } => {
-      switch(vocalState) {
-          case 'listening':
-              return { icon: 'sparkle', color: 'text-red-500 animate-pulse', title: 'Listening... (Click to Stop)' };
-          case 'speaking':
-              return { icon: 'close', color: 'text-amber-500', title: 'Speaking... (Click to Interrupt - TBD)' };
-          default:
-              return { icon: 'microphone', color: 'text-gray-400 hover:text-[var(--color-primary-fg)]', title: 'Use Microphone' };
-      }
+    const formatTranscript = (format: 'txt' | 'md'): string => {
+        return messages.map(msg => {
+            if (format === 'md') {
+                const codeContent = msg.code || (msg.content.match(/```.*\n([\s\S]+)```/) || [])[1];
+                let content = msg.content;
+                if(codeContent) {
+                    content = msg.content.replace(/```.*\n([\s\S]+)```/, `\`\`\`\n${codeContent}\`\`\``)
+                }
+                return `**${msg.role.toUpperCase()}:**\n\n${content}`;
+            }
+            // TXT format
+            return `${msg.role.toUpperCase()}:\n${msg.content}`;
+        }).join('\n\n---\n\n');
+    };
+
+    const handleExport = (format: 'copy' | 'txt' | 'md') => {
+        setIsExportMenuOpen(false);
+        if (format === 'copy') {
+            navigator.clipboard.writeText(formatTranscript('txt'));
+            return;
+        }
+        
+        const content = formatTranscript(format);
+        const blob = new Blob([content], { type: format === 'md' ? 'text/markdown' : 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat-history.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+
+  const vocalButtonClasses: Record<VocalState, string> = {
+    idle: 'text-gray-400 hover:text-cyan-400',
+    listening: 'text-red-400 animate-pulse',
+    speaking: 'text-cyan-400 animate-pulse',
   };
 
-  const vocalButtonUI = getVocalButtonUI();
-
   return (
-    <aside className="w-96 bg-[var(--color-bg-base)] border-l border-[var(--color-border-base)] flex flex-col">
-      <div className="h-12 flex items-center px-4 border-b border-[var(--color-border-base)] flex-shrink-0">
-        <h2 className="text-sm font-bold uppercase text-gray-400">AI Assistant</h2>
+    <aside className="w-80 bg-[#0d1117] border-l border-gray-700/50 flex flex-col flex-shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50">
+        <h2 className="text-xs uppercase text-gray-400 font-bold flex items-center justify-between">
+          <span>AI Assistant</span>
+        </h2>
+        <div className="flex items-center gap-2">
+            {hasNewBaronDirective && (
+              <button onClick={() => onConsultBaron("Proceed.")} className="relative flex items-center gap-1 text-amber-400/80 hover:text-amber-400 text-xs font-semibold" title="New Directive from The Baron. Click to proceed.">
+                <Icon name="baron" className="w-4 h-4" />
+                <span>DIRECTIVE</span>
+                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+              </button>
+            )}
+             <div className="relative" ref={exportMenuRef}>
+                 <button onClick={() => setIsExportMenuOpen(prev => !prev)} className="p-1.5 rounded-full text-gray-400 hover:bg-gray-700 hover:text-cyan-400 transition-colors" title="Export Chat">
+                    <Icon name="ellipsis" className="w-5 h-5" />
+                 </button>
+                 {isExportMenuOpen && (
+                     <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#161b22] border border-gray-700/50 rounded-lg shadow-2xl py-1 z-10">
+                        <button onClick={() => handleExport('copy')} className="flex items-center gap-3 px-3 py-2 w-full text-left text-sm text-gray-300 hover:bg-cyan-400/10 hover:text-cyan-300">Copy Transcript</button>
+                        <button onClick={() => handleExport('txt')} className="flex items-center gap-3 px-3 py-2 w-full text-left text-sm text-gray-300 hover:bg-cyan-400/10 hover:text-cyan-300">Save as .txt</button>
+                        <button onClick={() => handleExport('md')} className="flex items-center gap-3 px-3 py-2 w-full text-left text-sm text-gray-300 hover:bg-cyan-400/10 hover:text-cyan-300">Save as .md</button>
+                     </div>
+                 )}
+            </div>
+        </div>
       </div>
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-2 overflow-y-auto">
         {messages.map((msg, index) => (
-          <ChatMessage key={index} message={msg} onApplyCode={onApplyCode} onCreateFile={onCreateFile} />
+          <div key={index}>
+            <ChatMessage message={msg} onApplyCode={onApplyCode} onCreateFile={onCreateFile} />
+            {msg.responseType === 'orchestration' && msg.orchestrationPlan && (
+              <OrchestrationProgress plan={msg.orchestrationPlan} />
+            )}
+            {msg.responseType === 'code_generation' && msg.filename && msg.code && (
+              <div className="p-3 my-2 rounded-lg bg-gray-700/40 w-full max-w-sm">
+                <p className="text-sm font-semibold text-gray-300 mb-2">Generated File: <code className="font-mono text-cyan-400">{msg.filename}</code></p>
+                <div className="max-h-48 overflow-y-auto bg-black/30 rounded">
+                    <pre><code className="text-xs">{msg.code}</code></pre>
+                </div>
+                <button
+                  onClick={() => onCreateFile(msg.filename!, msg.code!)}
+                  className="w-full mt-2 px-3 py-1.5 bg-cyan-600/50 text-cyan-300 rounded hover:bg-cyan-600/70 transition-colors text-xs font-bold"
+                >
+                  Create File
+                </button>
+              </div>
+            )}
+          </div>
         ))}
         {isLoading && (
-           <div className="flex items-start gap-3 my-4">
-             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-amber-500/20">
-                <Icon name="sparkle" className="w-5 h-5 text-[var(--color-primary-fg)] animate-pulse" />
-             </div>
-             <div className="p-3 rounded-lg bg-[var(--color-bg-surface)]">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-[var(--color-primary-fg)] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-[var(--color-primary-fg)] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2 h-2 bg-[var(--color-primary-fg)] rounded-full animate-bounce"></div>
-                </div>
-             </div>
-           </div>
+          <div className="flex items-start gap-3 my-4">
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <Icon name="sparkle" className="w-5 h-5 text-[var(--color-primary-fg)] animate-spin" />
+            </div>
+            <div className="p-3 rounded-lg bg-[var(--color-bg-surface)] text-sm text-gray-400">
+              Thinking...
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
-
-      {suggestions.length > 0 && !isLoading && (
-        <div className="p-2 border-t border-[var(--color-border-base)]">
-            <h3 className="text-xs font-bold uppercase text-gray-500 px-2 mb-2">Suggestions</h3>
-            <div className="space-y-2">
-                {suggestions.map(suggestion => (
-                    <button 
-                        key={suggestion.id}
-                        onClick={() => setInput(suggestion.text)}
-                        className="w-full text-left flex items-center gap-2 p-2 bg-gray-700/30 text-gray-300 rounded hover:bg-gray-700/50 transition-colors text-xs"
-                    >
-                        <Icon name={suggestion.icon} className="w-4 h-4 text-[var(--color-primary-fg)] flex-shrink-0" />
-                        <span>{suggestion.text}</span>
-                    </button>
-                ))}
-            </div>
-        </div>
-      )}
-
-      <div className="p-2 border-t border-[var(--color-border-base)]">
-        <div className="bg-[var(--color-bg-surface)] rounded-md border border-gray-600 focus-within:border-[var(--color-primary-border)]">
-            {attachedImage && (
-                <div className="p-2 relative">
-                    <img src={`data:${attachedImage.mimeType};base64,${attachedImage.data}`} alt="Attachment" className="max-h-24 rounded" />
-                    <button onClick={() => setAttachedImage(null)} className="absolute top-1 right-1 p-0.5 bg-black/50 rounded-full text-white hover:bg-black/80">
-                        <Icon name="close" className="w-3 h-3" />
-                    </button>
-                </div>
-            )}
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask to create a component..."
-                className="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none"
-                disabled={isLoading}
-            />
-            <button type="submit" disabled={isLoading || (!input.trim() && !attachedImage)} className="p-2 rounded-md text-gray-400 hover:text-[var(--color-primary-fg)] disabled:text-gray-600 disabled:cursor-not-allowed">
-                <Icon name="send" className="w-5 h-5" />
+      <div className="p-2 border-t border-gray-700/50">
+        <div className="relative">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask a question or give a command..."
+            className="w-full bg-[#161b22] border border-gray-600 rounded-lg p-3 pr-24 text-sm focus:outline-none focus:border-cyan-500 resize-none h-24"
+            disabled={isLoading}
+          />
+          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+             <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded-full text-gray-400 hover:bg-gray-700 hover:text-cyan-400 transition-colors" title="Attach Image">
+                <Icon name="image" className="w-5 h-5" />
+             </button>
+             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+             <button onClick={onToggleListening} className={`p-2 rounded-full transition-colors ${vocalButtonClasses[vocalState]}`} title="Vocal Input">
+                <Icon name="microphone" className="w-5 h-5" />
+             </button>
+            <button
+              onClick={handleSend}
+              disabled={isLoading || (!input.trim() && !image)}
+              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-bold flex items-center gap-2"
+            >
+              <Icon name="send" className="w-4 h-4" />
             </button>
-            </form>
+          </div>
         </div>
-        <div className="flex items-center gap-1 mt-2">
-            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
-            <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded text-gray-400 hover:text-[var(--color-primary-fg)]" title="Attach Image"><Icon name="image" className="w-5 h-5" /></button>
-            <button className="p-2 rounded text-gray-400 hover:text-[var(--color-primary-fg)]" title="Upload File"><Icon name="upload" className="w-5 h-5" /></button>
-            <button onClick={onToggleListening} className={`p-2 rounded ${vocalButtonUI.color}`} title={vocalButtonUI.title}><Icon name={vocalButtonUI.icon} className="w-5 h-5" /></button>
-            <button onClick={handleConsult} disabled={isLoading || !input.trim()} className="p-2 rounded text-gray-400 hover:text-amber-400 disabled:text-gray-600 disabled:cursor-not-allowed ml-auto relative" title="Consult the Baron">
-                <Icon name="baron" className="w-5 h-5" />
-                {hasNewBaronDirective && <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-[var(--color-bg-base)]" />}
-            </button>
-        </div>
+        {image && (
+          <div className="mt-2 text-xs text-gray-400 flex items-center gap-2">
+            <Icon name="image" className="w-4 h-4 text-cyan-400" />
+            <span>Image attached.</span>
+            <button onClick={() => { setImage(undefined); if(fileInputRef.current) fileInputRef.current.value = ''; }} className="text-red-400 hover:underline">[remove]</button>
+          </div>
+        )}
       </div>
     </aside>
   );

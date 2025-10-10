@@ -22,9 +22,16 @@ import { ModMindPanel } from './components/ModMindPanel';
 import { SymbiotePanel } from './components/SymbiotePanel';
 import { DebuggerPanel } from './components/DebuggerPanel';
 import { ThemePanel } from './components/ThemePanel';
-import type { Message, FileTreeNode, Command, KernelModule, PythonPackage, Suggestion, Diagnostic, RefactorAction, LearnedPattern, PerformanceInsight, SecurityVulnerability, BuildManifest, ProjectTemplate, AegisStatus, ThreatLog, MonitoredComponent, CognitiveCoreState, CognitiveEngineTier, EthicalGovernorMode, OrchestrationPlan, ModMindState, SymbioteState, DebugState, VocalState, ThemeName } from './types';
+import { SearchPanel } from './components/SearchPanel';
+import { OraclePanel } from './components/OraclePanel';
+import { LaunchpadPanel } from './components/LaunchpadPanel';
+import { ChroniclePanel } from './components/ChroniclePanel';
+import { KeystrokeCompendiumPanel } from './components/KeystrokeCompendiumPanel';
+import { VaultPanel } from './components/VaultPanel';
+import type { Message, FileTreeNode, Command, KernelModule, PythonPackage, Suggestion, Diagnostic, RefactorAction, LearnedPattern, PerformanceInsight, SecurityVulnerability, BuildManifest, ProjectTemplate, AegisStatus, ThreatLog, MonitoredComponent, CognitiveCoreState, CognitiveEngineTier, EthicalGovernorMode, OrchestrationPlan, ModMindState, SymbioteState, DebugState, VocalState, ThemeName, LocalSearchResult, WebSearchResult, OracleInsight, DeploymentService, ChronicleEntry, ChronicleEventType, VaultFragment, VaultFragmentType } from './types';
 import { FILE_TREE, FILE_CONTENTS, PROJECT_TEMPLATES, MONITORED_COMPONENTS, COGNITIVE_CORE_STATE, MODMIND_STATE, SYMBIOTE_STATE, DEBUG_STATE, THEMES } from './constants';
-import { getAIResponse, getAIContextualSuggestions, getAIDiagnostics, getAIGeneratedCode, getAIRefactoring, getAIBlueSkyIdeas, getAILearnedPatterns, getAIGhostwrittenCode, getAIIntelAnalysis, getAIBuildPlan, runAegisAnalysis, getAIOrchestrationPlan, getBaronialConsultation } from './services/geminiService';
+import * as geminiService from './services/geminiService';
+import * as sovereignService from './services/sovereignService';
 
 // Browser-specific speech recognition setup
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -51,7 +58,7 @@ function deepClone<T>(obj: T): T {
     }
     return arrCopy as T;
   }
-  const objCopy = {} as { [key: string]: any };
+  const objCopy = {} as { [key:string]: any };
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       objCopy[key] = deepClone((obj as any)[key]);
@@ -111,15 +118,42 @@ const App: React.FC = () => {
   );
   const [hasNewBaronDirective, setHasNewBaronDirective] = useState(true); // Start with a notification
 
-  // Vocal Symbiosis State
+  const [isSovereignMode, setIsSovereignMode] = useState(false);
+  const [localSearchResults, setLocalSearchResults] = useState<LocalSearchResult[]>([]);
+  const [webSearchResult, setWebSearchResult] = useState<WebSearchResult | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [oracleInsights, setOracleInsights] = useState<OracleInsight[]>([]);
+  const [isOracleLoading, setIsOracleLoading] = useState(false);
+
+  const [chronicleLog, setChronicleLog] = useState<ChronicleEntry[]>([]);
+  const [vaultFragments, setVaultFragments] = useState<VaultFragment[]>([]);
+
+  const [dynamicBackground, setDynamicBackground] = useState<string>('');
+
   const [vocalState, setVocalState] = useState<VocalState>('idle');
   const vocalInputRef = useRef('');
 
-  const suggestionTimeoutRef = useRef<number | null>(null);
-  const diagnosticTimeoutRef = useRef<number | null>(null);
-  const intelTimeoutRef = useRef<number | null>(null);
+  const editorRef = useRef<{ getSelection: () => string }>(null);
 
-  // Apply theme changes dynamically
+  const handleSovereignModeTrigger = useCallback(() => {
+    if (!isSovereignMode) {
+      setIsSovereignMode(true);
+      const errorMessage: Message = { role: 'model', content: "**[SOVEREIGN MODE ACTIVATED]** The connection to the cognitive core has been severed. The IDE is now operating in a restricted, offline mode. Full functionality will be restored when the connection is re-established.", responseType: 'explanation' };
+      setAssistantMessages(prev => [...prev, errorMessage]);
+      logAction('system', 'Sovereign (offline) mode activated due to API connection failure.');
+    }
+  }, [isSovereignMode]);
+
+  const logAction = useCallback((type: ChronicleEventType, description: string) => {
+    const newEntry: ChronicleEntry = {
+        id: `log_${Date.now()}`,
+        timestamp: new Date(),
+        type,
+        description,
+    };
+    setChronicleLog(prev => [newEntry, ...prev]);
+  }, []);
+
   useEffect(() => {
     const selectedTheme = THEMES[theme];
     const root = document.documentElement;
@@ -129,6 +163,14 @@ const App: React.FC = () => {
       });
     }
   }, [theme]);
+
+  useEffect(() => {
+    if (dynamicBackground) {
+        document.body.style.background = dynamicBackground;
+    } else {
+        document.body.style.background = '';
+    }
+  }, [dynamicBackground]);
 
   const findFile = (nodes: FileTreeNode[], id: string): FileTreeNode | null => {
     for (const node of nodes) {
@@ -140,17 +182,6 @@ const App: React.FC = () => {
     }
     return null;
   };
-
-  const findFileByName = (nodes: FileTreeNode[], name: string): FileTreeNode | null => {
-    for (const node of nodes) {
-        if(node.name.toLowerCase() === name.toLowerCase()) return node;
-        if(node.children){
-            const found = findFileByName(node.children, name);
-            if(found) return found;
-        }
-    }
-    return null;
-  }
 
   const getFilePath = (nodes: FileTreeNode[], id: string, path: string = ''): string => {
     for (const node of nodes) {
@@ -168,11 +199,15 @@ const App: React.FC = () => {
   const selectedFilePath = getFilePath(files, selectedFileId);
 
   const handleFileSelect = useCallback((id: string) => {
-    const content = fileContents.get(id) || '';
-    setSelectedFileId(id);
-    setActiveEditorContent(content);
-    setActivePanel('explorer');
-  }, [fileContents]);
+    const file = findFile(files, id);
+    if(file){
+        const content = fileContents.get(id) || '';
+        setSelectedFileId(id);
+        setActiveEditorContent(content);
+        setActivePanel('explorer');
+        logAction('file', `Opened file: ${file.name}`);
+    }
+  }, [fileContents, files, logAction]);
 
   const handleEditorChange = useCallback((newContent: string) => {
     setActiveEditorContent(newContent);
@@ -188,8 +223,9 @@ const App: React.FC = () => {
         lines[lineIndex] = indentation + suggestion.trim();
         const newContent = lines.join('\n');
         handleEditorChange(newContent);
+        logAction('action', `Applied quick fix to line ${lineNumber} in ${selectedFile?.name}.`);
     }
-  }, [activeEditorContent, handleEditorChange]);
+  }, [activeEditorContent, handleEditorChange, logAction, selectedFile?.name]);
 
   const handleCreateFile = useCallback((filename: string, content: string) => {
     const newFileId = String(Date.now());
@@ -207,15 +243,15 @@ const App: React.FC = () => {
     });
 
     setFileContents(prev => new Map(prev).set(newFileId, content));
+    logAction('system', `Created new file: ${filename}`);
     handleFileSelect(newFileId);
-  }, [handleFileSelect]);
+  }, [handleFileSelect, logAction]);
   
   const speakText = useCallback((text: string, isConsultation: boolean = false) => {
     if ('speechSynthesis' in window) {
       setVocalState('speaking');
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Select a more "authoritative" voice for the Baron
       const voices = window.speechSynthesis.getVoices();
       if (isConsultation) {
         const baronVoice = voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.name.includes('David')) || voices.find(v => v.lang === 'en-GB' && v.name.includes('Male'));
@@ -227,7 +263,7 @@ const App: React.FC = () => {
       }
 
       utterance.onend = () => setVocalState('idle');
-      utterance.onerror = () => setVocalState('idle'); // Handle errors
+      utterance.onerror = () => setVocalState('idle');
       window.speechSynthesis.speak(utterance);
     }
   }, []);
@@ -238,6 +274,7 @@ const App: React.FC = () => {
     const userMessage: Message = { role: 'user', content: messageContent, image };
     const currentMessages = [...assistantMessages, userMessage];
     setAssistantMessages(currentMessages);
+    logAction('ai', `Sent to AI: "${messageContent.substring(0, 50)}..."`);
     
     setIsLoading(true);
     setAiSuggestions([]);
@@ -245,7 +282,8 @@ const App: React.FC = () => {
     setCurrentOrchestrationStep(-1);
   
     try {
-      const aiResponse = await getAIResponse(userMessage, activeEditorContent, currentMessages);
+      const aiService = isSovereignMode ? sovereignService : geminiService;
+      const aiResponse = await aiService.getAIResponse(userMessage, activeEditorContent, currentMessages);
       let modelMessage: Message;
   
       if (aiResponse.responseType === 'orchestration' && aiResponse.orchestrationPlan) {
@@ -254,46 +292,60 @@ const App: React.FC = () => {
         setCurrentOrchestrationStep(0);
       } else if (aiResponse.responseType === 'code_generation' && aiResponse.filename && aiResponse.code) {
         modelMessage = { role: 'model', content: `I've drafted a new file \`${aiResponse.filename}\`. You can review the code and create the file directly.`, responseType: 'code_generation', filename: aiResponse.filename, code: aiResponse.code, };
+      } else if (aiResponse.responseType === 'theme_update' && aiResponse.cssBackground && aiResponse.explanation) {
+        modelMessage = { role: 'model', content: aiResponse.explanation, responseType: 'theme_update', cssBackground: aiResponse.cssBackground };
+        setDynamicBackground(aiResponse.cssBackground);
+        logAction('system', `AI changed wallpaper.`);
       } else {
         modelMessage = { role: 'model', content: aiResponse.explanation || "My apologies, I couldn't generate a valid response.", responseType: 'explanation', };
       }
       setAssistantMessages(prev => [...prev, modelMessage]);
       speakText(modelMessage.content);
     } catch (error) {
-      console.error('Gemini API error:', error);
-      const errorMessageContent = error instanceof Error ? error.message : "My apologies, I seem to be malfunctioning. Check the console for details.";
-      const errorMessage: Message = { role: 'model', content: errorMessageContent, responseType: 'explanation' };
-      setAssistantMessages(prev => [...prev, errorMessage]);
-      speakText(errorMessageContent);
+      if (error instanceof Error && error.message === 'SOVEREIGN_MODE_TRIGGER') {
+        handleSovereignModeTrigger();
+      } else {
+        console.error('Gemini API error:', error);
+        const errorMessageContent = error instanceof Error ? error.message : "My apologies, I seem to be malfunctioning. Check the console for details.";
+        const errorMessage: Message = { role: 'model', content: errorMessageContent, responseType: 'explanation' };
+        setAssistantMessages(prev => [...prev, errorMessage]);
+        speakText(errorMessageContent);
+      }
     } finally {
       if (!orchestrationPlan) {
         setIsLoading(false);
       }
     }
-  }, [activeEditorContent, isLoading, assistantMessages, orchestrationPlan, speakText]);
+  }, [activeEditorContent, isLoading, assistantMessages, orchestrationPlan, speakText, logAction, isSovereignMode, handleSovereignModeTrigger]);
   
   const handleConsultBaron = useCallback(async (userPrompt: string) => {
     if (!userPrompt.trim() || isLoading) return;
     setHasNewBaronDirective(false);
     const userMessage: Message = { role: 'user', content: userPrompt };
     setAssistantMessages(prev => [...prev, userMessage]);
+    logAction('ai', `Consulted The Baron.`);
     setIsLoading(true);
     setAiSuggestions([]);
     try {
-        const { filename, code } = await getBaronialConsultation(lastBaronResponse, userPrompt);
+        const aiService = isSovereignMode ? sovereignService : geminiService;
+        const { filename, code } = await aiService.getBaronialConsultation(lastBaronResponse, userPrompt);
         const modelMessage: Message = { role: 'model', content: `The Baron's directive is clear. I will now create the \`${filename}\` file as per his specifications.`, responseType: 'code_generation', filename: filename, code: code, consultation: true };
         setAssistantMessages(prev => [...prev, modelMessage]);
-        speakText(modelMessage.content, true); // Use Baron's voice
+        speakText(modelMessage.content, true);
     } catch (error) {
+       if (error instanceof Error && error.message === 'SOVEREIGN_MODE_TRIGGER') {
+        handleSovereignModeTrigger();
+      } else {
         console.error('Baronial Consultation error:', error);
         const errorMessageContent = error instanceof Error ? error.message : "The Baron is unavailable. Check the console.";
         const errorMessage: Message = { role: 'model', content: errorMessageContent, responseType: 'explanation' };
         setAssistantMessages(prev => [...prev, errorMessage]);
         speakText(errorMessageContent);
+      }
     } finally {
         setIsLoading(false);
     }
-  }, [isLoading, lastBaronResponse, speakText]);
+  }, [isLoading, lastBaronResponse, speakText, logAction, isSovereignMode, handleSovereignModeTrigger]);
 
   const handleToggleListening = useCallback(() => {
     if (!SpeechRecognition) {
@@ -328,36 +380,214 @@ const App: React.FC = () => {
     };
   }, [handleSendMessage]);
 
+  const handleSearch = useCallback(async (query: string, type: 'local' | 'web') => {
+      if (!query.trim()) return;
+      setIsSearching(true);
+      setLocalSearchResults([]);
+      setWebSearchResult(null);
+      logAction('action', `Searched for "${query}" (${type})`);
 
-  const handleRunCode = useCallback(() => { /* ... */ }, [selectedFile]);
-  const handleAskAI = useCallback(() => { /* ... */ }, [handleSendMessage]);
-  const handleTerminalCommand = useCallback((command: string) => { /* ... */ }, [files, fileContents]);
-  const handleActivateModule = useCallback((moduleId: string) => { /* ... */ }, []);
-  const handleInstallPackage = useCallback((packageName: string) => { /* ... */ }, [handleTerminalCommand]);
+      if (type === 'local') {
+          const results: LocalSearchResult[] = [];
+          const queryLower = query.toLowerCase();
+          for (const [id, content] of fileContents.entries()) {
+              const file = findFile(files, id);
+              if (file && file.type === 'file') {
+                  if(file.name.toLowerCase().includes(queryLower)){
+                      results.push({ fileId: id, fileName: file.name, line: 1, snippet: 'Filename match' });
+                  }
+                  const lines = content.split('\n');
+                  lines.forEach((line, index) => {
+                      if (line.toLowerCase().includes(queryLower)) {
+                          results.push({ fileId: id, fileName: file.name, line: index + 1, snippet: line.trim() });
+                      }
+                  });
+              }
+          }
+          setLocalSearchResults(results);
+          setIsSearching(false);
+      } else { // web search
+          try {
+            const aiService = isSovereignMode ? sovereignService : geminiService;
+            const result = await aiService.getWebSearch(query);
+            setWebSearchResult(result);
+          } catch(error) {
+            if (error instanceof Error && error.message === 'SOVEREIGN_MODE_TRIGGER') {
+              handleSovereignModeTrigger();
+            } else {
+              console.error("Web search failed:", error);
+            }
+          } finally {
+            setIsSearching(false);
+          }
+      }
+  }, [files, fileContents, logAction, isSovereignMode, handleSovereignModeTrigger]);
+
+  const handleConsultOracle = useCallback(async () => {
+    setIsOracleLoading(true);
+    setOracleInsights([]);
+    logAction('ai', `Consulted The Oracle.`);
+    try {
+        const context = `
+          CURRENT FILE: ${selectedFile?.name || 'None'}
+          ---
+          ${activeEditorContent}
+          ---
+          RECENT CONVERSATION:
+          ${assistantMessages.slice(-3).map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}
+        `;
+        const aiService = isSovereignMode ? sovereignService : geminiService;
+        const insights = await aiService.getOracleInsight(context);
+        setOracleInsights(insights);
+    } catch(error) {
+        if (error instanceof Error && error.message === 'SOVEREIGN_MODE_TRIGGER') {
+            handleSovereignModeTrigger();
+        } else {
+            console.error("Oracle consultation failed:", error);
+        }
+    } finally {
+        setIsOracleLoading(false);
+    }
+  }, [selectedFile, activeEditorContent, assistantMessages, logAction, isSovereignMode, handleSovereignModeTrigger]);
+
+  const handlePushToService = useCallback(async (service: DeploymentService, repoName: string, commitMessage: string) => {
+    const serviceUrl = service === 'github' ? 'github.com' : 'huggingface.co';
+    logAction('system', `Attempting push to ${service} at ${repoName}.`);
+    setTerminalOutput(prev => [...prev, `> git push ${service} main`]);
+    
+    const addOutputWithDelay = (message: string, delay: number) => 
+        new Promise(resolve => setTimeout(() => {
+            setTerminalOutput(prev => [...prev, message]);
+            resolve(true);
+        }, delay));
+
+    await addOutputWithDelay(`[LAUNCHPAD] Initializing push to ${service}...`, 500);
+    await addOutputWithDelay(`[LAUNCHPAD] Compressing project files...`, 1000);
+    await addOutputWithDelay(`[LAUNCHPAD] Committing with message: "${commitMessage}"`, 1000);
+    await addOutputWithDelay(`[LAUNCHPAD] Pushing to ${repoName}...`, 1500);
+    await addOutputWithDelay(`[LAUNCHPAD] ✨ Success! Your project is now live at https://${serviceUrl}/${repoName}`, 500);
+
+  }, [logAction]);
+
+  const handleAddVaultFragment = useCallback((content: string, type: VaultFragmentType) => {
+    const newFragment: VaultFragment = {
+        id: `vault_${Date.now()}`,
+        type,
+        content,
+        sourceFile: type === 'Snippet' ? selectedFile?.name : undefined,
+        timestamp: new Date(),
+    };
+    setVaultFragments(prev => [newFragment, ...prev].slice(0, 50)); // Keep last 50
+    logAction('action', `Added ${type} to The Vault.`);
+  }, [logAction, selectedFile]);
+  
+  const handlePasteFromVault = useCallback((content: string) => {
+      handleEditorChange(activeEditorContent + content);
+  }, [activeEditorContent, handleEditorChange]);
+
+  const handleSaveFile = useCallback(() => {
+    if (selectedFile) {
+        logAction('file', `File saved: ${selectedFile.name}`);
+    }
+  }, [selectedFile, logAction]);
+
+  const handleTerminalCommand = useCallback((command: string) => {
+    setTerminalOutput(prev => [...prev, `> ${command}`]);
+    logAction('terminal', `Ran command: ${command}`);
+   }, [logAction]);
+  
+  const handleActivateModule = useCallback((moduleId: string) => {
+    setKernelModules(prevModules =>
+      prevModules.map(m =>
+        m.id === moduleId ? { ...m, activated: !m.activated } : m
+      )
+    );
+    const module = kernelModules.find(m => m.id === moduleId);
+    if (module) {
+        logAction('system', `Kernel module '${module.name}' ${module.activated ? 'deactivated' : 'activated'}.`);
+    }
+  }, [logAction, kernelModules]);
+  
+  const handleInstallPackage = useCallback((packageName: string) => {
+    handleTerminalCommand(`pip install ${packageName}`);
+    const addOutputWithDelay = (message: string, delay: number) => 
+        new Promise(resolve => setTimeout(() => {
+            setTerminalOutput(prev => [...prev, message]);
+            resolve(true);
+        }, delay));
+    
+    addOutputWithDelay(`[PIP] Simulating installation of ${packageName}...`, 1000).then(() => {
+        addOutputWithDelay(`[PIP] ✨ Successfully installed ${packageName}.`, 500);
+        const newPackage: PythonPackage = { name: packageName, version: '0.1.0', description: 'Locally installed package.'};
+        setPythonPackages(prev => [...prev, newPackage]);
+    });
+  }, [handleTerminalCommand]);
+
   const handleGenerateCodeFromComment = useCallback(async (comment: string, lineNumber: number) => { /* ... */ }, [activeEditorContent, selectedFile, handleEditorChange]);
   const handleRefactorSelection = useCallback(async (selection: { text: string, start: number, end: number }, action: RefactorAction) => { /* ... */ }, [activeEditorContent, selectedFile, handleEditorChange]);
-  const handleBlueSkyGenerate = useCallback(async (prompt: string): Promise<string> => getAIBlueSkyIdeas(prompt), []);
-  const buildProjectContext = useCallback((): string => { /* ... */ return ''; }, [files, fileContents]);
-  const handleCalibrateAI = useCallback(async () => { /* ... */ }, [buildProjectContext]);
+  const handleBlueSkyGenerate = useCallback(async (prompt: string): Promise<string> => {
+    const aiService = isSovereignMode ? sovereignService : geminiService;
+    return aiService.getAIBlueSkyIdeas(prompt)
+  }, [isSovereignMode]);
+  
+  const buildProjectContext = useCallback((): string => {
+    let context = 'Project Files:\n';
+    fileContents.forEach((content, id) => {
+        const file = findFile(files, id);
+        if (file) {
+            context += `--- FILE: ${file.name} ---\n${content.substring(0, 2000)}\n\n`; // Limit content length
+        }
+    });
+    return context;
+  }, [files, fileContents]);
+  
+  const handleCalibrateAI = useCallback(async () => {
+    logAction('ai', 'Ghostwriter calibration initiated.');
+    setGhostwriterStatus('calibrating');
+    try {
+      const context = buildProjectContext();
+      const aiService = isSovereignMode ? sovereignService : geminiService;
+      const patterns = await aiService.getAILearnedPatterns(context);
+      setLearnedPatterns(patterns);
+      setGhostwriterStatus('calibrated');
+      logAction('ai', 'Ghostwriter calibration complete.');
+    } catch (error) {
+      if (error instanceof Error && error.message === 'SOVEREIGN_MODE_TRIGGER') {
+        handleSovereignModeTrigger();
+      }
+      console.error('Calibration failed:', error);
+      setGhostwriterStatus('uncalibrated');
+      const errorMessage: Message = { role: 'model', content: "Ghostwriter calibration failed. The AI core may be offline.", responseType: 'explanation' };
+      setAssistantMessages(prev => [...prev, errorMessage]);
+    }
+  }, [buildProjectContext, logAction, isSovereignMode, handleSovereignModeTrigger]);
+  
   const handleGhostwriteComponent = useCallback(async (prompt: string) => { /* ... */ }, [buildProjectContext, handleCreateFile]);
   
   const handleGenerateBuildPlan = useCallback(async (prompt: string) => {
     if (!prompt.trim()) return;
     setIsArchitectLoading(true);
     setBuildManifest(null);
+    logAction('ai', `Architect generating plan for: "${prompt}"`);
     try {
-        const manifest = await getAIBuildPlan(prompt);
+        const aiService = isSovereignMode ? sovereignService : geminiService;
+        const manifest = await aiService.getAIBuildPlan(prompt);
         setBuildManifest(manifest);
     } catch (error) {
+        if (error instanceof Error && error.message === 'SOVEREIGN_MODE_TRIGGER') {
+          handleSovereignModeTrigger();
+        }
         console.error("Failed to generate build plan:", error);
         const errorMessage: Message = { role: 'model', content: `Apologies, the System Architect failed to generate a plan. Details: ${error instanceof Error ? error.message : 'Unknown error'}.`, responseType: 'explanation' };
         setAssistantMessages(prev => [...prev, errorMessage]);
     } finally {
         setIsArchitectLoading(false);
     }
-  }, []);
+  }, [logAction, isSovereignMode, handleSovereignModeTrigger]);
   
-  const handleForgeProject = useCallback((template: ProjectTemplate, projectName: string) => { /* ... */ }, [fileContents, handleFileSelect]);
+  const handleForgeProject = useCallback((template: ProjectTemplate, projectName: string) => {
+    logAction('system', `Forged project "${projectName}" from template "${template.name}".`);
+  }, [logAction]);
   const handleRunAegisScan = useCallback(async () => { /* ... */ }, []);
   const handleIsolateComponent = useCallback((componentId: string) => { /* ... */ }, []);
   const handleCognitiveEngineChange = useCallback((tier: CognitiveEngineTier) => {
@@ -370,11 +600,78 @@ const App: React.FC = () => {
   const handleToggleDataTrust = useCallback(() => { /* ... */ }, []);
   const handleThemeChange = useCallback((themeName: ThemeName) => {
     setTheme(themeName);
-  }, []);
+    logAction('action', `Theme changed to ${themeName}.`);
+  }, [logAction]);
 
   useEffect(() => { /* Orchestrator Execution Effect */ }, [currentOrchestrationStep, orchestrationPlan]);
-  const commands: Command[] = useMemo(() => { /* ... */ return []; }, [files, handleFileSelect, handleRunCode, handleAskAI, handleCalibrateAI, handleRunAegisScan]);
-  useEffect(() => { /* Keydown listener for Command Palette */ }, []);
+  
+  const commands: Command[] = useMemo(() => {
+      let cmdList: Command[] = [
+        { id: 'toggle_sidebar', name: 'Toggle Sidebar', category: 'View', action: () => setIsSidebarPanelVisible(v => !v) },
+        { id: 'toggle_terminal', name: 'Toggle Terminal', category: 'View', action: () => setIsTerminalVisible(v => !v) },
+        { id: 'toggle_assistant', name: 'Toggle Assistant', category: 'View', action: () => setIsAssistantVisible(v => !v) },
+        { id: 'save_file', name: 'Save File', category: 'File', action: handleSaveFile },
+      ];
+      files.forEach(node => {
+        if(node.type === 'file') {
+            cmdList.push({ id: `open_${node.id}`, name: `Open: ${node.name}`, category: 'File', action: () => handleFileSelect(node.id) });
+        } else if (node.children) {
+            node.children.forEach(child => {
+                if(child.type === 'file') {
+                    cmdList.push({ id: `open_${child.id}`, name: `Open: ${child.name}`, category: 'File', action: () => handleFileSelect(child.id) });
+                }
+            });
+        }
+      });
+      return cmdList;
+  }, [files, handleFileSelect, handleSaveFile]);
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const metaKey = isMac ? e.metaKey : e.ctrlKey;
+
+        if (metaKey) {
+            switch(e.key.toLowerCase()) {
+                case 'p':
+                    e.preventDefault();
+                    setIsCommandPaletteOpen(v => !v);
+                    break;
+                case 'b':
+                    e.preventDefault();
+                    setIsSidebarPanelVisible(v => !v);
+                    logAction('action', `Toggled sidebar via shortcut.`);
+                    break;
+                case 'j':
+                    e.preventDefault();
+                    setIsTerminalVisible(v => !v);
+                    logAction('action', `Toggled terminal via shortcut.`);
+                    break;
+                case 'k':
+                    e.preventDefault();
+                    setIsAssistantVisible(v => !v);
+                    logAction('action', `Toggled assistant via shortcut.`);
+                    break;
+                case 's':
+                    e.preventDefault();
+                    handleSaveFile();
+                    break;
+                case 'c':
+                    setTimeout(() => {
+                        navigator.clipboard.readText().then(text => {
+                            if (text && (document.activeElement?.tagName.toUpperCase() === 'TEXTAREA')) {
+                                handleAddVaultFragment(text, 'Snippet');
+                            }
+                        });
+                    }, 100);
+                    break;
+            }
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSaveFile, logAction, handleAddVaultFragment]);
+
   useEffect(() => { /* Proactive AI Suggestions & Diagnostics */ }, [selectedFileId, activeEditorContent, handleSendMessage]);
 
   const renderSidebarPanel = () => {
@@ -384,8 +681,11 @@ const App: React.FC = () => {
 
     switch(activePanel) {
       case 'explorer': return <ExplorerPanel files={files} selectedFileId={selectedFileId} onFileSelect={handleFileSelect} />;
+      case 'search': return <SearchPanel onSearch={handleSearch} localResults={localSearchResults} webResult={webSearchResult} isLoading={isSearching} onFileSelect={handleFileSelect} />;
+      case 'oracle': return <OraclePanel insights={oracleInsights} onConsult={handleConsultOracle} isLoading={isOracleLoading} />;
       case 'debugger': return <DebuggerPanel state={debugState} />;
       case 'source-control': return <SourceControlPanel gitModule={gitModule!} natModule={natModule!} onActivate={handleActivateModule} />;
+      case 'launchpad': return <LaunchpadPanel onPush={handlePushToService} />;
       case 'intel': return <IntelPanel performanceInsights={performanceInsights} securityVulnerabilities={securityVulnerabilities} />;
       case 'aegis': return <AegisPanel status={aegisStatus} logs={threatLogs} components={monitoredComponents} onRunScan={handleRunAegisScan} onIsolate={handleIsolateComponent} />;
       case 'architect': return <ArchitectPanel manifest={buildManifest} onGeneratePlan={handleGenerateBuildPlan} isLoading={isArchitectLoading} />;
@@ -394,6 +694,9 @@ const App: React.FC = () => {
       case 'kernel': return <KernelPanel modules={kernelModules} onActivateModule={handleActivateModule} />;
       case 'ghostwriter': return <GhostwriterPanel status={ghostwriterStatus} patterns={learnedPatterns} onCalibrate={handleCalibrateAI} onGhostwrite={handleGhostwriteComponent} />;
       case 'changelog': return <ChangelogPanel />;
+      case 'chronicle': return <ChroniclePanel log={chronicleLog} />;
+      case 'vault': return <VaultPanel fragments={vaultFragments} onAddFragment={handleAddVaultFragment} onPasteFragment={handlePasteFromVault} />;
+      case 'compendium': return <KeystrokeCompendiumPanel />;
       case 'cognitive-core': return <CognitiveCorePanel state={cognitiveCoreState} onEngineChange={handleCognitiveEngineChange} onGovernorChange={handleEthicalGovernorChange} />;
       case 'modmind': return <ModMindPanel state={modMindState} onStrategyToggle={handleStrategyToggle} />;
       case 'symbiote': return <SymbiotePanel state={symbioteState} onToggleDataTrust={handleToggleDataTrust} />;
@@ -403,48 +706,50 @@ const App: React.FC = () => {
   }
   
   const pythonModuleActivated = kernelModules.find(m => m.id === 'python')?.activated || false;
+  const cognitiveEngineTier = isSovereignMode ? 'distilled' : cognitiveCoreState.engineTier;
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--color-bg-base)] text-gray-300">
-      <Header 
-        filePath={selectedFilePath}
-        onCommandPaletteClick={() => setIsCommandPaletteOpen(true)}
-        onBlueSkyClick={() => setIsBlueSkyModalOpen(true)} 
+    <div className="flex h-screen bg-[var(--color-bg-base)] text-gray-300">
+      <ActivityBar 
+        activePanel={activePanel} 
+        onPanelChange={setActivePanel}
+        pythonModuleActivated={pythonModuleActivated}
       />
-      <main className="flex flex-1 overflow-hidden">
-        {isSidebarPanelVisible && renderSidebarPanel()}
-        <div className="flex flex-col flex-1 min-w-0">
-          <Editor
-            fileName={selectedFile?.name || ''}
-            content={activeEditorContent}
-            diagnostics={diagnostics}
-            onChange={handleEditorChange}
-            onApplyFix={handleApplyFix}
-            onGenerateCodeFromComment={handleGenerateCodeFromComment}
-            onRefactorSelection={handleRefactorSelection}
-          />
-          {isTerminalVisible && <Terminal output={terminalOutput} onCommand={handleTerminalCommand} />}
-        </div>
-        {isAssistantVisible && <Assistant
-          messages={assistantMessages}
-          suggestions={aiSuggestions}
-          onSendMessage={handleSendMessage}
-          onApplyCode={handleEditorChange}
-          onCreateFile={handleCreateFile}
-          isLoading={isLoading}
-          onConsultBaron={handleConsultBaron}
-          hasNewBaronDirective={hasNewBaronDirective}
-          vocalState={vocalState}
-          onToggleListening={handleToggleListening}
-        />}
-      </main>
-      <div className="flex items-center flex-shrink-0">
-         <ActivityBar 
-            activePanel={activePanel} 
-            onPanelChange={setActivePanel}
-            pythonModuleActivated={pythonModuleActivated}
+      <div className="flex flex-col flex-1 min-w-0">
+        <Header 
+          filePath={selectedFilePath}
+          onCommandPaletteClick={() => setIsCommandPaletteOpen(true)}
+          onBlueSkyClick={() => setIsBlueSkyModalOpen(true)} 
         />
-        <StatusBar engineTier={cognitiveCoreState.engineTier} />
+        <main className="flex flex-1 overflow-hidden">
+          {isSidebarPanelVisible && renderSidebarPanel()}
+          <div className="flex flex-col flex-1 min-w-0">
+            <Editor
+              ref={editorRef}
+              fileName={selectedFile?.name || ''}
+              content={activeEditorContent}
+              diagnostics={diagnostics}
+              onChange={handleEditorChange}
+              onApplyFix={handleApplyFix}
+              onGenerateCodeFromComment={handleGenerateCodeFromComment}
+              onRefactorSelection={handleRefactorSelection}
+            />
+            {isTerminalVisible && <Terminal output={terminalOutput} onCommand={handleTerminalCommand} />}
+          </div>
+          {isAssistantVisible && <Assistant
+            messages={assistantMessages}
+            suggestions={aiSuggestions}
+            onSendMessage={handleSendMessage}
+            onApplyCode={handleEditorChange}
+            onCreateFile={handleCreateFile}
+            isLoading={isLoading}
+            onConsultBaron={handleConsultBaron}
+            hasNewBaronDirective={hasNewBaronDirective}
+            vocalState={vocalState}
+            onToggleListening={handleToggleListening}
+          />}
+        </main>
+        <StatusBar engineTier={cognitiveEngineTier} />
       </div>
       <BlueSkyModal 
         isOpen={isBlueSkyModalOpen}

@@ -27,11 +27,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
       cmd.keywords?.some(k => k.toLowerCase().includes(search.toLowerCase()))
   ) : commands;
   
-  // FIX: By explicitly typing the accumulator `acc` in the reduce function, we ensure that `groupedCommands` is correctly typed as `Record<string, Command[]>`. This resolves downstream errors where its type was being inferred as `unknown`.
-  const groupedCommands = filteredCommands.reduce((acc: Record<string, Command[]>, cmd) => {
+  // FIX: Explicitly typed the initial value for the reduce function to ensure that
+  // `groupedCommands` is correctly typed as `Record<string, Command[]>`. This
+  // resolves downstream type errors where its type was being inferred as `any` or `unknown`.
+  const groupedCommands = filteredCommands.reduce((acc, cmd) => {
     (acc[cmd.category] = acc[cmd.category] || []).push(cmd);
     return acc;
-  }, {});
+  }, {} as Record<string, Command[]>);
   
   const flatCommands = Object.values(groupedCommands).flat();
 

@@ -21,7 +21,7 @@ export const BlueSkyModal: React.FC<BlueSkyModalProps> = ({ isOpen, onClose, onG
     setResult('');
     try {
         const response = await onGenerate(prompt);
-        setResult(response);
+        setResult(marked.parse(response));
     } catch (error) {
         console.error("Blue Sky generation error:", error);
         setResult("My apologies, I couldn't generate ideas. Please check the console for details.");
@@ -47,7 +47,7 @@ export const BlueSkyModal: React.FC<BlueSkyModalProps> = ({ isOpen, onClose, onG
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-700/50 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Icon name="users" className="w-6 h-6 text-blue-300" />
+            <Icon name="mindmap" className="w-6 h-6 text-blue-300" />
             <h2 className="text-lg font-bold text-gray-200">Blue Sky Brainstorming Session</h2>
           </div>
           <button onClick={handleClose} className="p-1 rounded-full hover:bg-gray-700">
@@ -74,7 +74,7 @@ export const BlueSkyModal: React.FC<BlueSkyModalProps> = ({ isOpen, onClose, onG
             {result && (
                 <div 
                     className="prose prose-invert prose-sm md:prose-base max-w-full" 
-                    dangerouslySetInnerHTML={{ __html: result.replace(/\n/g, '<br />') }} // Simple markdown-like rendering
+                    dangerouslySetInnerHTML={{ __html: result }}
                 />
             )}
         </div>

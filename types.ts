@@ -3,7 +3,7 @@ import React from 'react';
 export interface Message {
   role: 'user' | 'model';
   content: string;
-  responseType?: 'explanation' | 'code_generation' | 'orchestration';
+  responseType?: 'explanation' | 'code_generation' | 'orchestration' | 'theme_update';
   filename?: string;
   code?: string;
   source?: 'assistant' | 'ghostwriter';
@@ -13,6 +13,7 @@ export interface Message {
     data: string; // base64
   };
   consultation?: boolean; // Flag for messages resulting from a Baronial Consultation
+  cssBackground?: string; // For AI-driven theme updates
 }
 
 export interface FileTreeNode {
@@ -117,6 +118,14 @@ export interface ThreatLog {
   severity: 'critical' | 'high' | 'medium';
 }
 
+export interface PromptThreatLog {
+  id: string;
+  timestamp: string;
+  prompt: string;
+  threatType: 'Prompt Injection' | 'Data Exfiltration Attempt' | 'Command Injection Attempt';
+  actionTaken: 'Blocked';
+}
+
 export interface MonitoredComponent {
   id: string;
   name: string;
@@ -177,50 +186,96 @@ export interface BiometricStream {
 }
 
 export interface SymbioteState {
-    connectionStatus: 'disconnected' | 'connecting' | 'connected';
+    connectionStatus: 'connected' | 'connecting' | 'disconnected';
     dataTrustOptIn: boolean;
     streams: BiometricStream[];
 }
 
-// Types for the Debugger
-export interface StackFrame {
-    id: string;
-    functionName: string;
-    file: string;
-    line: number;
+// Types for the Quantum Debugger
+export interface CallStackFrame {
+  id: string;
+  functionName: string;
+  file: string;
+  line: number;
 }
 
 export interface Breakpoint {
-    id: string;
-    file: string;
-    line: number;
-    enabled: boolean;
+  id: string;
+  file: string;
+  line: number;
+  enabled: boolean;
 }
 
 export interface DebugState {
-    status: 'inactive' | 'running' | 'paused';
-    callStack: StackFrame[];
-    breakpoints: Breakpoint[];
-    variables: Record<string, any>;
+  status: 'running' | 'paused' | 'stopped';
+  callStack: CallStackFrame[];
+  breakpoints: Breakpoint[];
+  variables: Record<string, any>;
 }
 
-// Types for the Vocal Interface
+// Types for Vocal Symbiosis
 export type VocalState = 'idle' | 'listening' | 'speaking';
 
-// Types for the UI Theming feature
+// Types for Theming
 export type ThemeName = 'amber' | 'canary';
-
-export interface ThemePalette {
-  '--color-primary-fg': string;
-  '--color-primary-bg-hover': string;
-  '--color-primary-border': string;
-  '--color-bg-base': string;
-  '--color-bg-surface': string;
-  '--color-border-base': string;
-  '--color-accent-red': string;
-}
 
 export interface Theme {
   name: string;
-  palette: ThemePalette;
+  palette: Record<string, string>;
+}
+
+// Types for Search
+export interface LocalSearchResult {
+    fileId: string;
+    fileName: string;
+    line: number;
+    snippet: string;
+}
+
+export interface Source {
+    uri: string;
+    title: string;
+}
+
+export interface WebSearchResult {
+    summary: string;
+    sources: Source[];
+}
+
+// Types for Oracle
+export interface OracleInsight {
+    id: string;
+    type: 'Next Step' | 'Potential Pitfall' | 'Relevant Snippet' | 'External Knowledge';
+    title: string;
+    description: string;
+    code?: string;
+    link?: string;
+}
+
+// Types for Launchpad
+export type DeploymentService = 'github' | 'huggingface';
+
+// Types for Chronicle
+export type ChronicleEventType = 'file' | 'ai' | 'system' | 'terminal' | 'action';
+export interface ChronicleEntry {
+    id: string;
+    timestamp: Date;
+    type: ChronicleEventType;
+    description: string;
+}
+
+// Types for Keystroke Compendium
+export interface Shortcut {
+    keys: string;
+    description: string;
+}
+
+// Types for The Vault
+export type VaultFragmentType = 'Snippet' | 'Note' | 'URL' | 'Command';
+export interface VaultFragment {
+    id: string;
+    type: VaultFragmentType;
+    content: string;
+    sourceFile?: string;
+    timestamp: Date;
 }

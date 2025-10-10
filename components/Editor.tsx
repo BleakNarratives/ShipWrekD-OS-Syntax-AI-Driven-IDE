@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import type { Diagnostic, RefactorAction } from '../types';
 import { InlineDiagnostic } from './InlineDiagnostic';
 import { Icon } from './Icon';
@@ -22,7 +22,8 @@ interface ContextMenuState {
   selection: { text: string; start: number; end: number; };
 }
 
-export const Editor: React.FC<EditorProps> = ({ fileName, content, diagnostics, onChange, onApplyFix, onGenerateCodeFromComment, onRefactorSelection }) => {
+export const Editor = forwardRef((props: EditorProps, ref) => {
+  const { fileName, content, diagnostics, onChange, onApplyFix, onGenerateCodeFromComment, onRefactorSelection } = props;
   const codeRef = useRef<HTMLElement>(null);
   const editingRef = useRef<HTMLTextAreaElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
@@ -30,6 +31,16 @@ export const Editor: React.FC<EditorProps> = ({ fileName, content, diagnostics, 
   
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [isGenerating, setIsGenerating] = useState<number | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    getSelection: () => {
+      if (editingRef.current) {
+        const { selectionStart, selectionEnd, value } = editingRef.current;
+        return value.substring(selectionStart, selectionEnd);
+      }
+      return '';
+    }
+  }));
 
   useEffect(() => {
     if (codeRef.current) {
@@ -142,3 +153,21 @@ export const Editor: React.FC<EditorProps> = ({ fileName, content, diagnostics, 
             onChange={(e) => onChange(e.target.value)}
             onScroll={syncScroll}
             onContextMenu={handleContextMenu}
+            className="absolute inset-0 w-full h-full p-0 bg-transparent text-transparent caret-white resize-none border-none outline-none overflow-auto z-10 font-mono text-sm leading-[21px]"
+            spellCheck="false"
+          />
+          <div ref={linesRef} className="w-full h-full p-0 text-gray-300 overflow-auto pointer-events-none">
+            {lines.map((line, i) => (
+                <div key={i} className="h-[21px] leading-[21px] whitespace-pre">
+                    <pre className="p-0 m-0"><code ref={i === 0 ? codeRef : null} className={`${language} p-0 m-0`}>{line}</code></pre>
+                    {diagnosticsByLine[i+1] && diagnosticsByLine[i+1].map((d, dIndex) => (
+                        <InlineDiagnostic key={dIndex} diagnostic={d} originalCode={line} onApplyFix={onApplyFix} />
+                    ))}
+                </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
