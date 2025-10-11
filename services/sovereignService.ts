@@ -1,4 +1,4 @@
-import type { Message, LearnedPattern, WebSearchResult, OracleInsight, BuildManifest } from '../types';
+import type { Message, LearnedPattern, WebSearchResult, OracleInsight, BuildManifest, Diagnostic } from '../types';
 
 /**
  * This service provides mock, placeholder responses when the main AI cognitive core is offline.
@@ -10,7 +10,8 @@ const sovereignExplanation = `**[SOVEREIGN MODE]** My higher cognitive functions
 export async function getAIResponse(
     userMessage: Message, 
     code: string,
-    conversationHistory: Message[]
+    conversationHistory: Message[],
+    isParentsAwayMode?: boolean
 ): Promise<{ responseType: 'explanation', explanation?: string }> {
     return Promise.resolve({ 
         responseType: 'explanation', 
@@ -87,6 +88,34 @@ export async function getBaronialConsultation(baronDirective: string, userPrompt
         filename: 'SovereignDirective.txt',
         code: `The Baron is currently incommunicado. His last directive was:\n\n---\n${baronDirective}\n---\n\nSovereign Core recommends proceeding with caution.`
     });
+}
+
+export async function getAIGhostwrite(prompt: string, projectContext: string): Promise<{ filename: string, code: string }> {
+    return Promise.resolve({
+        filename: 'SovereignComponent.tsx',
+        code: `// [SOVEREIGN MODE] Ghostwriter is offline.
+// This is a placeholder component based on your prompt:
+// "${prompt}"
+
+import React from 'react';
+
+const SovereignComponent: React.FC = () => {
+  return (
+    <div>
+      <h1>Sovereign Component</h1>
+      <p>This is a placeholder generated in Sovereign Mode.</p>
+    </div>
+  );
+};
+
+export default SovereignComponent;
+`
+    });
+}
+
+export async function getAIDiagnostics(code: string): Promise<Diagnostic[]> {
+    console.log("Sovereign mode: AI diagnostics are offline.");
+    return Promise.resolve([]);
 }
 
 // Other functions can be added here as needed to fully mock the AI service interface.

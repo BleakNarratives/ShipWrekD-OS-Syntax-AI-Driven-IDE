@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type IconName = 'logo' | 'file' | 'addFile' | 'folder' | 'folderOpen' | 'react' | 'js' | 'python' | 'json' | 'markdown' | 'send' | 'sparkle' | 'play' | 'user' | 'users' | 'gitBranch' | 'sync' | 'bell' | 'check' | 'close' | 'command' | 'kernel' | 'git' | 'magic' | 'save' | 'package' | 'lightbulb' | 'wrench' | 'ghostwriter' | 'dna' | 'changelog' | 'shield' | 'bolt' | 'lock' | 'chevronDown' | 'chevronRight' | 'cpu' | 'hammer' | 'aegis' | 'brain' | 'orchestrate' | 'mindmap' | 'heart-circuit' | 'bug' | 'microphone' | 'image' | 'upload' | 'baron' | 'cloud' | 'palette' | 'search' | 'oracle' | 'rocket' | 'history' | 'ellipsis' | 'keyboard' | 'vault';
+export type IconName = 'logo' | 'file' | 'addFile' | 'folder' | 'folderOpen' | 'react' | 'js' | 'python' | 'json' | 'markdown' | 'send' | 'sparkle' | 'play' | 'user' | 'users' | 'gitBranch' | 'sync' | 'bell' | 'check' | 'close' | 'command' | 'kernel' | 'git' | 'magic' | 'save' | 'package' | 'lightbulb' | 'wrench' | 'ghostwriter' | 'dna' | 'changelog' | 'shield' | 'bolt' | 'lock' | 'chevronDown' | 'chevronRight' | 'cpu' | 'hammer' | 'aegis' | 'brain' | 'orchestrate' | 'mindmap' | 'heart-circuit' | 'bug' | 'microphone' | 'image' | 'upload' | 'baron' | 'cloud' | 'palette' | 'search' | 'oracle' | 'rocket' | 'history' | 'ellipsis' | 'keyboard' | 'vault' | 'crosshair' | 'terminal' | 'contribution' | 'copy' | 'download' | 'gear' | 'logbook' | 'dock' | 'architect' | 'menu';
 
 interface IconProps {
   name: IconName;
@@ -61,11 +61,21 @@ const ICONS: Record<IconName, React.ReactNode> = {
   palette: <path strokeLinecap="round" strokeLinejoin="round" d="M12 2.5c5.25 0 9.5 4.25 9.5 9.5s-4.25 9.5-9.5 9.5S2.5 17.25 2.5 12 6.75 2.5 12 2.5zm0 2.5a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
   search: <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />,
   oracle: <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0zM12 22v-2" />,
-  rocket: <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 18H12a2 2 0 01-2-2V7.5a2.5 2.5 0 015 0V16a2 2 0 01-2 2zm-4-13.5c-1.333-1-2-2.333-2-4V.5m2 4V.5m0 3.5c1.333-1 2-2.333 2-4V.5m-2 4c0 1.667.667 3 2 4m-2-4c-.667 1-1.333 2-2 4m10 5.5h-1.5m1.5 0h1.5m-1.5 0v-1.5m0 1.5v1.5M6 12H4.5m1.5 0H7.5m-1.5 0V10.5m0 1.5v1.5" />,
+  rocket: <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 18H12a2 2 0 01-2-2V7.5a2.5 2.5 0 015 0V16a2 2 0 01-2 2zm-4-13.5c-1.333-1-2-2.333-2-4V.5m2 4V.5m0 3.5c1.333-1 2-2.333-2-4V.5m-2 4c0 1.667.667 3 2 4m-2-4c-.667 1-1.333 2-2 4m10 5.5h-1.5m1.5 0h1.5m-1.5 0v-1.5m0 1.5v1.5M6 12H4.5m1.5 0H7.5m-1.5 0V10.5m0 1.5v1.5" />,
   history: <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />,
   ellipsis: <path strokeLinecap="round" strokeLinejoin="round" d="M12 12h.01M19 12h.01M5 12h.01" />,
   keyboard: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h.01M11 9h.01M15 9h.01M7 13h.01M11 13h.01M15 13h.01M7 17h10" /></>,
   vault: <><rect x="3" y="8" width="18" height="12" rx="2" /><path d="M7 8v-2a5 5 0 0110 0v2" /><circle cx="12" cy="14" r="1.5" /></>,
+  crosshair: <><circle cx="12" cy="12" r="8" /><path d="M12 2v4m0 12v4M2 12h4m12 0h4" /></>,
+  terminal: <><path d="M4 17l6-6-6-6" /><path d="M12 19h8" /></>,
+  contribution: <><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19 10h3m-1.5-1.5v3" /></>,
+  copy: <><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></>,
+  download: <path strokeLinecap="round" strokeLinejoin="round" d="M12 11V19M12 19l4-4m-4 4L8 15m-6-4v2a2 2 0 002 2h12a2 2 0 002-2v-2" />,
+  gear: <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM12 15a3 3 0 100-6 3 3 0 000 6z" />,
+  logbook: <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />,
+  dock: <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h18v18H3V3zm0 13h18M9 3v13" />,
+  architect: <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
+  menu: <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />,
 };
 
 export const Icon: React.FC<IconProps> = ({ name, className, title }) => {
@@ -76,7 +86,7 @@ export const Icon: React.FC<IconProps> = ({ name, className, title }) => {
       viewBox="0 0 24 24"
       strokeWidth={1.5}
       stroke="currentColor"
-      className={className}
+      className={`flex-shrink-0 ${className}`}
       aria-label={title || name}
     >
       {ICONS[name]}

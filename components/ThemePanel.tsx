@@ -10,14 +10,16 @@ interface ThemePanelProps {
 
 export const ThemePanel: React.FC<ThemePanelProps> = ({ currentTheme, onThemeChange }) => {
   return (
-    <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-      <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">Theme Forge</h2>
+    <div className="w-full h-full flex flex-col">
+      <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+        <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">Theme Forge</h2>
+      </div>
       <div className="flex-1 p-2 overflow-y-auto space-y-2">
         {Object.entries(THEMES).map(([id, theme]) => (
           <button
             key={id}
             onClick={() => onThemeChange(id as ThemeName)}
-            className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${currentTheme === id ? 'bg-cyan-500/10 border-cyan-500' : 'bg-[#161b22] border-gray-700/50 hover:border-gray-600'}`}
+            className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${currentTheme === id ? 'bg-cyan-500/10 border-cyan-500' : 'bg-[var(--color-bg-base)] border-[var(--color-border-subtle)] hover:border-gray-600'}`}
           >
             <h4 className="font-bold text-gray-200 mb-2">{theme.name}</h4>
             <div className="flex items-center gap-2">
@@ -28,6 +30,6 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ currentTheme, onThemeCha
           </button>
         ))}
       </div>
-    </aside>
+    </div>
   );
 };

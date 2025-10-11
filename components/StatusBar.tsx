@@ -1,43 +1,45 @@
-import React from 'react';
-import { Icon, IconName } from './Icon';
-import type { CognitiveEngineTier } from '../types';
+import React, { useContext } from 'react';
+import { Icon } from './Icon';
+import { AppContext } from '../App';
 
-interface StatusBarProps {
-    engineTier: CognitiveEngineTier;
-}
+export const StatusBar: React.FC = () => {
+  const context = useContext(AppContext);
+  if (!context) return null;
+  const { cognitiveLoad, isAnalyzingCode, analysisError, activeFileNode: activeFile } = context;
 
-export const StatusBar: React.FC<StatusBarProps> = ({ engineTier }) => {
-  // FIX: Explicitly type the map object to ensure TypeScript correctly infers
-  // the 'icon' property as type 'IconName' instead of the wider 'string' type.
-  const engineInfoMap: Record<CognitiveEngineTier, { icon: IconName; text: string; }> = {
-      distilled: { icon: 'cpu', text: 'Local AI' },
-      standard: { icon: 'cloud', text: 'Cloud AI' },
-      advanced: { icon: 'cloud', text: 'Cloud AI (Adv)' },
-      unfettered: { icon: 'cloud', text: 'Cloud AI (Unf)' },
-  };
-  const engineInfo = engineInfoMap[engineTier];
+  const loadColor = cognitiveLoad > 75 ? 'bg-red-500' : cognitiveLoad > 50 ? 'bg-yellow-500' : 'bg-cyan-500';
 
   return (
-    <footer className="bg-[var(--color-bg-surface)] border-t border-[var(--color-border-base)] px-4 h-8 flex items-center justify-between text-xs text-gray-400 flex-shrink-0">
+    <footer className="bg-[var(--color-bg-surface)] shadow-[0_-1px_0_0_var(--color-border-base)] px-4 h-8 flex items-center justify-between text-xs text-gray-400 flex-shrink-0 z-10">
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 hover:text-white cursor-pointer" title="Git Branch">
           <Icon name="gitBranch" className="w-4 h-4" />
           <span>main</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Icon name="sync" className="w-4 h-4" />
-          <span>0↓ 0↑</span>
+        <div className="flex items-center gap-2" title={`Cognitive Load: ${Math.round(cognitiveLoad)}%`}>
+            <Icon name="brain" className="w-4 h-4"/>
+            <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${loadColor}`} style={{ width: `${cognitiveLoad}%` }}></div>
+            </div>
         </div>
-         <div className="flex items-center gap-1.5" title={`Cognitive Engine: ${engineTier}`}>
-          <Icon name={engineInfo.icon} className="w-4 h-4" />
-          <span>{engineInfo.text}</span>
-        </div>
+
+        {analysisError ? (
+            <div className="flex items-center gap-1.5 text-yellow-400" title={analysisError}>
+                <Icon name="bell" className="w-4 h-4" />
+                <span>{analysisError}</span>
+            </div>
+        ) : isAnalyzingCode ? (
+            <div className="flex items-center gap-1.5 text-cyan-300 px-2 py-0.5 rounded-md bg-cyan-500/10 animate-pulse" title="Analyzing code...">
+                <Icon name="sparkle" className="w-4 h-4 animate-spin" />
+                <span>Analyzing...</span>
+            </div>
+        ) : null}
       </div>
       <div className="flex items-center gap-4">
-        <span>Spaces: 2</span>
-        <span>UTF-8</span>
-        <span>TypeScript</span>
-        <div className="flex items-center gap-1">
+        <span title="Indentation">Spaces: 2</span>
+        <span title="File Encoding">UTF-8</span>
+        {activeFile && <span title="Language Mode">{activeFile.name.split('.').pop()?.toUpperCase()}</span>}
+        <div className="flex items-center gap-1 hover:text-white cursor-pointer" title="Notifications">
           <Icon name="bell" className="w-4 h-4" />
         </div>
       </div>

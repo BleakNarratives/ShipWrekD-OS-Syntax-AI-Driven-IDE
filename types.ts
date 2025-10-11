@@ -217,7 +217,7 @@ export interface DebugState {
 export type VocalState = 'idle' | 'listening' | 'speaking';
 
 // Types for Theming
-export type ThemeName = 'amber' | 'canary';
+export type ThemeName = 'amber' | 'canary' | 'praxis' | 'guardsman' | 'aether';
 
 export interface Theme {
   name: string;
@@ -278,4 +278,210 @@ export interface VaultFragment {
     content: string;
     sourceFile?: string;
     timestamp: Date;
+}
+
+// Types for aFiREFLY Data Consent
+export interface DataPoint {
+    id: string;
+    name: string;
+    description: string;
+    active: boolean;
+}
+
+export interface MembershipTier {
+    name: string;
+    contributionRequired: number;
+}
+
+export interface DataConsentState {
+    optedIn: boolean;
+    contributionScore: number;
+    currentTier: MembershipTier;
+    nextTier: MembershipTier;
+    dataPoints: DataPoint[];
+}
+
+// Types for aFiREFLY Predictive Buffer
+export interface PredictiveBufferSegment {
+    id: string;
+    state: 'empty' | 'buffering' | 'ready';
+    confidence: number; // 0-1
+}
+
+// Types for Agent Ops
+export interface TraceLogEntry {
+    id: string;
+    timestamp: Date;
+    source: 'SYSTEM' | 'aFiREFLY' | 'OSINT' | 'ModMind';
+    message: string;
+}
+
+export interface OSINTLead {
+    confidence: number;
+    profile: string;
+    locations: string[];
+    associates: string[];
+}
+
+export interface TraceResult {
+    summary: string;
+    leads: OSINTLead[];
+}
+
+
+// Types for aFiREFLY Wisp
+export interface WispState {
+    level: number;
+    xp: number;
+    xpToNextLevel: number;
+    status: 'idle' | 'working' | 'evolving';
+    tasksCompleted: number;
+}
+
+// BARON: Refined. Tasks require structure and accountability.
+export type WispTaskType = 'FORMAT_FILE' | 'CREATE_BOILERPLATE';
+
+export interface WispTask {
+    id: string;
+    description: string;
+    type: WispTaskType;
+    status: 'pending' | 'completed' | 'failed';
+    payload: { 
+        fileId?: string | null;
+        fileType?: 'component' | 'service';
+        name?: string;
+    };
+}
+
+// BARON: Essential configurations for a controlled Symbiote.
+export type NotificationProfile = 'subtle' | 'audible' | 'full_alert';
+export type EvolutionaryFocus = 'none' | 'File I/O' | 'Component Stubs' | 'Testing Scaffolds';
+
+export interface SymbioteConfig {
+    notificationProfile: NotificationProfile;
+    permissions: {
+        readAnalysis: boolean;
+        writeFormatting: boolean;
+        writeLogic: boolean;
+    };
+    evolutionaryFocus: EvolutionaryFocus;
+}
+
+// BARON: The "Nat" version control system requires a state snapshot structure. This is it.
+export interface Snapshot {
+  id: string;
+  timestamp: Date;
+  description: string;
+  fileTree: FileTreeNode[];
+  fileContents: Map<string, string>;
+}
+
+// BARON: The one true source of application state. All components will drink from this well.
+export interface AppContextType {
+    // State
+    fileTree: FileTreeNode[];
+    selectedFileId: string | null;
+    fileContents: Map<string, string>;
+    terminalOutput: string[];
+    messages: Message[];
+    diagnostics: Diagnostic[];
+    isAnalyzingCode: boolean;
+    isLoadingFile: boolean;
+    analysisError: string | null;
+    splitViewFileId: string | null;
+    isAssistantLoading: boolean;
+    hasNewBaronDirective: boolean;
+    activePanel: string;
+    kernelModules: KernelModule[];
+    buildManifest: BuildManifest | null;
+    ghostwriterStatus: 'uncalibrated' | 'calibrating' | 'calibrated';
+    theme: ThemeName;
+    aegisStatus: AegisStatus;
+    architecturalViolation: boolean;
+    threatLogs: ThreatLog[];
+    monitoredComponents: MonitoredComponent[];
+    cognitiveCoreState: CognitiveCoreState;
+    modMindState: ModMindState;
+    symbioteState: SymbioteState;
+    debugState: DebugState;
+    localSearchResults: LocalSearchResult[];
+    webSearchResult: WebSearchResult | null;
+    isSearchLoading: boolean;
+    oracleInsights: OracleInsight[];
+    isOracleLoading: boolean;
+    chronicleLog: ChronicleEntry[];
+    vaultFragments: VaultFragment[];
+    dataConsentState: DataConsentState;
+    pythonPackages: PythonPackage[];
+    performanceInsights: PerformanceInsight[];
+    securityVulnerabilities: SecurityVulnerability[];
+    traceLog: TraceLogEntry[];
+    traceResult: TraceResult | null;
+    isTracing: boolean;
+    snapshots: Snapshot[];
+    wispTasks: WispTask[];
+    vocalState: VocalState;
+    cognitiveLoad: number;
+    activeFileNode: FileTreeNode | null;
+    activeFileContent: string;
+    captainLogContent: string;
+
+    // Handlers
+    handleFileSelect: (id: string) => void;
+    setFileContents: React.Dispatch<React.SetStateAction<Map<string, string>>>;
+    setTerminalOutput: React.Dispatch<React.SetStateAction<string[]>>;
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+    setDiagnostics: React.Dispatch<React.SetStateAction<Diagnostic[]>>;
+    handleApplyFix: (lineNumber: number, suggestion: string) => void;
+    handlePreviewFile: (fileId: string, fileName: string) => void;
+    handleCommand: (command: string) => void;
+    handleSendMessage: (message: string, image?: Message['image']) => Promise<void>;
+    handleSearch: (query: string, type: 'local' | 'web') => Promise<void>;
+    handleOracleConsult: () => Promise<void>;
+    handleGhostwrite: (prompt: string) => Promise<void>;
+    handlePurgeViolation: () => void;
+    handleSaveSnapshot: (description: string) => void;
+    handleRestoreSnapshot: (snapshotId: string) => void;
+    setActivePanel: React.Dispatch<React.SetStateAction<string>>;
+    handleCodeChange: (newCode: string) => void;
+    setSplitViewFileId: React.Dispatch<React.SetStateAction<string | null>>;
+    findFile: (nodes: FileTreeNode[], id: string) => FileTreeNode | null;
+    getFilePath: () => string;
+    handleRunCode: () => void;
+    handleCreateFile: (parentId: string | null) => void;
+    handleCreateFolder: (parentId: string | null) => void;
+    handleDeleteNode: (nodeId: string) => void;
+    handleRenameNode: (nodeId: string, newName: string) => void;
+
+    // Panel-specific handlers
+    onActivateModule: (id: string) => void;
+    onGeneratePlan: (prompt: string) => void;
+    onCalibrate: () => void;
+    onForgeProject: (template: ProjectTemplate, projectName: string) => void;
+    onThemeChange: React.Dispatch<React.SetStateAction<ThemeName>>;
+    onInstallPackage: (packageName: string) => void;
+    onRunScan: () => void;
+    onIsolate: (id: string) => void;
+    onEngineChange: (tier: any) => void;
+    onGovernorChange: (mode: any) => void;
+    onStrategyToggle: (strategyId: string) => void;
+    onToggleDataTrust: () => void;
+    onPushToLaunchpad: (service: any, repoName: string) => Promise<void>;
+    onToggleDataConsentOptIn: () => void;
+    onTraceCascade: (seed: string) => void;
+    onConsultBaron: (prompt: string) => void;
+    onCreateFile: (filename: string, code: string) => void;
+}
+
+
+// New types for the redesigned UI
+export type IdeMode = 'code' | 'plan' | 'debug' | 'system';
+export type LayoutMode = 'portrait' | 'landscape';
+
+export interface OmniBarSuggestion {
+    id: string;
+    type: 'file' | 'command' | 'ai';
+    label: string;
+    description?: string;
+    action: () => void;
 }

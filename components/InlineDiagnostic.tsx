@@ -11,13 +11,13 @@ interface InlineDiagnosticProps {
 export const InlineDiagnostic: React.FC<InlineDiagnosticProps> = ({ diagnostic, originalCode, onApplyFix }) => {
     const [showFix, setShowFix] = useState(false);
 
-    const severityMap: Record<Diagnostic['severity'], { icon: IconName, color: string, bgColor: string }> = {
-        'error': { icon: 'close', color: 'text-red-400', bgColor: 'bg-red-500/10' },
-        'warning': { icon: 'bell', color: 'text-yellow-400', bgColor: 'bg-yellow-500/10' },
-        'info': { icon: 'lightbulb', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10' },
+    const severityMap: Record<Diagnostic['severity'], { icon: IconName, color: string }> = {
+        'error': { icon: 'close', color: 'text-red-400' },
+        'warning': { icon: 'bell', color: 'text-yellow-400' },
+        'info': { icon: 'lightbulb', color: 'text-cyan-400' },
     };
 
-    const { icon, color, bgColor } = severityMap[diagnostic.severity] || severityMap.info;
+    const { icon, color } = severityMap[diagnostic.severity] || severityMap.info;
 
     const handleAccept = () => {
         if(diagnostic.suggestion) {
@@ -29,7 +29,7 @@ export const InlineDiagnostic: React.FC<InlineDiagnosticProps> = ({ diagnostic, 
     const indentation = originalCode.match(/^\s*/)?.[0] || '';
 
     return (
-        <div className={`p-2 text-xs leading-normal whitespace-normal ${bgColor}`}>
+        <div className={`p-3 text-xs leading-normal whitespace-normal`}>
             <div className="flex items-start gap-2">
                 <Icon name={icon} className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
                 <div className="flex-1">

@@ -60,8 +60,10 @@ export const ArchitectPanel: React.FC<ArchitectPanelProps> = ({ manifest, onGene
     };
 
     return (
-        <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-            <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">System Architect</h2>
+        <div className="w-full h-full flex flex-col">
+            <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+                <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">System Architect</h2>
+            </div>
             <div className="flex-1 flex flex-col min-h-0">
                 {isLoading ? (
                     <div className="p-4 flex flex-col items-center justify-center text-center h-full">
@@ -71,13 +73,13 @@ export const ArchitectPanel: React.FC<ArchitectPanelProps> = ({ manifest, onGene
                     </div>
                 ) : manifest ? <ManifestView manifest={manifest} /> : <WelcomeView />}
             </div>
-            <div className="p-2 border-t border-gray-700/50">
+            <div className="p-2 border-t border-[var(--color-border-base)]">
                 <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSubmit(); }}
                     placeholder="Describe your OS goal... e.g., 'a lightweight OS for retro gaming'"
-                    className="w-full h-20 p-2 bg-[#161b22] border border-gray-700/50 rounded-md text-sm focus:outline-none focus:border-cyan-500 resize-none"
+                    className="w-full h-20 p-2 bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-md text-sm focus:outline-none focus:border-cyan-500 resize-none"
                     disabled={isLoading}
                 />
                 <button
@@ -89,6 +91,6 @@ export const ArchitectPanel: React.FC<ArchitectPanelProps> = ({ manifest, onGene
                     Generate Plan
                 </button>
             </div>
-        </aside>
+        </div>
     );
 };

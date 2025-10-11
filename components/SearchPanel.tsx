@@ -19,16 +19,18 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ onSearch, localResults
     };
 
     return (
-        <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-            <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">Search</h2>
-            <div className="p-2 border-b border-gray-700/50">
+        <div className="w-full h-full flex flex-col">
+            <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+                <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">Search</h2>
+            </div>
+            <div className="p-2 border-b border-[var(--color-border-base)]">
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="Search..."
-                    className="w-full bg-[#161b22] border border-gray-600 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-md px-2 py-1.5 text-sm focus:outline-none focus:border-cyan-500"
                 />
                 <div className="flex items-center gap-2 mt-2">
                     <button onClick={() => setSearchType('local')} className={`flex-1 py-1 text-xs rounded ${searchType === 'local' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-gray-700/50 text-gray-400'}`}>Local</button>
@@ -84,6 +86,6 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ onSearch, localResults
                     </div>
                 )}
             </div>
-        </aside>
+        </div>
     );
 };

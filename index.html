@@ -1,50 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShipWrekD OS - Core IDE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.23.0"
-  }
-}
-</script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShipWrekD OS - Core IDE "Syntax"</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- BARON: Essential scripts for syntax highlighting and markdown parsing. Their absence was an unforgivable oversight. -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
   <style>
-    :root {
-      --color-primary-fg: #f59e0b; /* amber-500 */
-      --color-primary-bg-hover: rgba(245, 158, 11, 0.1);
-      --color-primary-border: #d97706; /* amber-600 */
-      --color-bg-base: #0d1117;
-      --color-bg-surface: #161b22;
-      --color-border-base: rgba(128, 128, 128, 0.25);
-    }
+    /* Global styles for a better look and feel */
     body {
-      font-family: 'Fira Code', monospace;
-      transition: background 0.5s ease-in-out;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      margin: 0;
+      background-color: #f0f2f5; /* Aether base */
+      color: #212529; /* Aether text */
+      font-family: 'Helvetica Neue', 'Helvetica', 'Inter', sans-serif;
     }
-    .font-sans { /* Re-apply sans for non-code elements if needed */
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    
+    /* Easter Egg: Praxis Lock */
+    .praxis-locked {
+      transform: rotate(180deg);
+      transition: transform 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     }
-    .font-mono {
-      font-family: 'Fira Code', monospace;
+
+    /* BARON: Wisp pulse animation for code lines. Subtle. Efficient. */
+    @keyframes pulse-highlight {
+      0% { background-color: rgba(0, 255, 255, 0); }
+      50% { background-color: rgba(0, 255, 255, 0.15); }
+      100% { background-color: rgba(0, 255, 255, 0); }
+    }
+    .line-pulse {
+      animation: pulse-highlight 1.5s ease-out;
+    }
+
+    /* BARON: Animation for the Editor's skeleton loader. It provides a sense of activity, not absence. */
+    @keyframes skeleton-pulse {
+      50% { background-color: #374151; }
+    }
+    .skeleton-pulse {
+      animation: skeleton-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* BARON: Animations for the EquiNex Interactive Button. A dynamic presence is mandatory. */
+    @keyframes eib-summon {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .animate-eib-summon {
+      animation: eib-summon 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes eib-banish {
+      from { transform: scale(1); opacity: 1; }
+      to { transform: scale(0.5); opacity: 0; }
+    }
+    .animate-eib-banish {
+      animation: eib-banish 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+    }
+
+    /* Diagnostic Popover Styles */
+    .diagnostic-popover {
+        position: absolute;
+        left: 5rem; /* Position it to the right of the gutter */
+        transform: translateY(-50%);
+        width: 500px;
+        max-width: 80%;
+        z-index: 20;
+        background-color: var(--color-bg-surface);
+        border: 1px solid var(--color-border-base);
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+
+    .diagnostic-popover-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+        background-color: var(--color-bg-base);
+        border-bottom: 1px solid var(--color-border-base);
+    }
+    
+    .diagnostic-popover-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #9ca3af; /* text-gray-400 */
+    }
+
+    .diagnostic-popover-close {
+        padding: 0.25rem;
+        border-radius: 9999px;
+        transition: background-color 150ms;
+    }
+    
+    .diagnostic-popover-close:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Scrollbar styling for modern dark themes */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(128, 128, 128, 0.3);
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(128, 128, 128, 0.5);
     }
   </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+      "react/": "https://aistudiocdn.com/react@^19.2.0/",
+      "react": "https://aistudiocdn.com/react@^19.2.0",
+      "framer-motion": "https://aistudiocdn.com/framer-motion@^11.2.12"
+    }
+  }
+  </script>
 </head>
-  <body class="bg-[var(--color-bg-base)] text-gray-300 font-mono">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

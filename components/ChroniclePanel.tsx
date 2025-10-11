@@ -18,8 +18,10 @@ export const ChroniclePanel: React.FC<ChroniclePanelProps> = ({ log }) => {
     const reversedLog = [...log].reverse();
 
     return (
-        <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-            <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">Chronicle</h2>
+        <div className="w-full h-full flex flex-col">
+            <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+                <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">Chronicle</h2>
+            </div>
             <div className="flex-1 p-2 overflow-y-auto">
                 {reversedLog.length > 0 ? (
                     <ul>
@@ -48,6 +50,6 @@ export const ChroniclePanel: React.FC<ChroniclePanelProps> = ({ log }) => {
                     </div>
                 )}
             </div>
-        </aside>
+        </div>
     );
 };

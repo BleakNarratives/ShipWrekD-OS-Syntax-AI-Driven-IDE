@@ -1,6 +1,7 @@
 import React from 'react';
 import type { OracleInsight } from '../types';
 import { Icon, IconName } from './Icon';
+import { CodeBlock } from './CodeBlock';
 
 // This is a browser-only component, so we can safely reference 'window'
 declare const hljs: any;
@@ -30,7 +31,7 @@ const InsightCard: React.FC<{ insight: OracleInsight }> = ({ insight }) => {
     const config = typeConfig[insight.type];
 
     return (
-        <div className="p-3 bg-[#161b22] border border-gray-700/50 rounded-lg">
+        <div className="p-3 bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-lg">
             <div className="flex items-center gap-3 mb-2">
                 <Icon name={config.icon} className={`w-5 h-5 flex-shrink-0 ${config.color}`} />
                 <div className='flex-1'>
@@ -40,9 +41,7 @@ const InsightCard: React.FC<{ insight: OracleInsight }> = ({ insight }) => {
             </div>
             <p className="text-sm text-gray-400 mb-2">{insight.description}</p>
             {insight.code && (
-                <div className="max-h-48 overflow-y-auto bg-black/30 rounded mt-2">
-                    <pre><code ref={codeRef} className="text-xs">{insight.code}</code></pre>
-                </div>
+                <CodeBlock code={insight.code} filename="oracle-insight.js" />
             )}
             {insight.link && (
                 <a href={insight.link} target="_blank" rel="noopener noreferrer" className="text-sm text-cyan-400 hover:underline mt-2 block truncate">
@@ -55,8 +54,10 @@ const InsightCard: React.FC<{ insight: OracleInsight }> = ({ insight }) => {
 
 export const OraclePanel: React.FC<OraclePanelProps> = ({ insights, onConsult, isLoading }) => {
   return (
-    <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-      <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">The Oracle</h2>
+    <div className="w-full h-full flex flex-col">
+      <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+        <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">The Oracle</h2>
+      </div>
       <div className="flex-1 p-2 overflow-y-auto">
         {isLoading ? (
              <div className="p-4 flex flex-col items-center justify-center text-center h-full">
@@ -78,16 +79,16 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ insights, onConsult, i
             </div>
         )}
       </div>
-      <div className="p-2 border-t border-gray-700/50">
+      <div className="p-2 border-t border-[var(--color-border-base)]">
         <button
           onClick={onConsult}
           disabled={isLoading}
-          className="w-full mt-2 px-3 py-2 bg-cyan-600/80 text-white rounded hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm font-bold flex items-center justify-center gap-2"
+          className="w-full px-3 py-2 bg-cyan-600/80 text-white rounded hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm font-bold flex items-center justify-center gap-2"
         >
           <Icon name="oracle" className="w-5 h-5" />
           Consult the Oracle
         </button>
       </div>
-    </aside>
+    </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { VaultFragment, VaultFragmentType } from '../types';
 import { Icon, IconName } from './Icon';
+import { CodeBlock } from './CodeBlock';
 
 interface VaultPanelProps {
   fragments: VaultFragment[];
@@ -11,7 +12,6 @@ interface VaultPanelProps {
 const fragmentConfig: Record<VaultFragmentType, { icon: IconName; color: string; }> = {
     'Snippet': { icon: 'file', color: 'text-cyan-400' },
     'Note': { icon: 'lightbulb', color: 'text-yellow-400' },
-    // FIX: Replaced non-existent 'link' icon with 'cloud' icon.
     'URL': { icon: 'cloud', color: 'text-green-400' },
     'Command': { icon: 'command', color: 'text-purple-400' },
 };
@@ -34,6 +34,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ fragments, onAddFragment
                     <ul className="space-y-2">
                         {fragments.map(fragment => {
                             const config = fragmentConfig[fragment.type];
+                            const isCode = fragment.type === 'Snippet' || fragment.type === 'Command';
                             return (
                                 <li key={fragment.id} className="p-2 bg-[#161b22] border border-gray-700/50 rounded-lg">
                                     <div className="flex items-center gap-2 mb-2">
@@ -41,9 +42,16 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ fragments, onAddFragment
                                         <span className={`text-xs font-bold ${config.color}`}>{fragment.type}</span>
                                         <span className="text-xs text-gray-500 ml-auto">{fragment.timestamp.toLocaleTimeString()}</span>
                                     </div>
-                                    <pre className="text-xs text-gray-300 bg-black/30 p-2 rounded whitespace-pre-wrap max-h-24 overflow-y-auto font-mono">
-                                        <code>{fragment.content}</code>
-                                    </pre>
+                                    {isCode ? (
+                                        <CodeBlock 
+                                            code={fragment.content}
+                                            filename={fragment.sourceFile || `${fragment.type.toLowerCase()}-snippet.txt`}
+                                        />
+                                    ) : (
+                                        <p className="text-xs text-gray-300 bg-black/30 p-2 rounded whitespace-pre-wrap font-mono">
+                                            {fragment.content}
+                                        </p>
+                                    )}
                                     {fragment.sourceFile && <p className="text-xs text-gray-500 mt-1 truncate">From: {fragment.sourceFile}</p>}
                                     <div className="flex items-center gap-2 mt-2">
                                         <button onClick={() => onPasteFragment(fragment.content)} className="flex-1 py-1 bg-gray-600/50 text-gray-300 rounded hover:bg-gray-600/70 text-xs">Paste</button>

@@ -71,12 +71,12 @@ const CalibratedView: React.FC<{ patterns: LearnedPattern[]; onGhostwrite: (prom
                     ))}
                 </ul>
             </div>
-            <div className="mt-auto p-2 border-t border-gray-700/50">
+            <div className="mt-auto p-2 border-t border-[var(--color-border-base)]">
                 <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Ghostwrite a component... (e.g., 'a settings modal with theme and notification toggles')"
-                    className="w-full h-24 p-2 bg-[#161b22] border border-gray-700/50 rounded-md text-sm focus:outline-none focus:border-cyan-500 resize-none"
+                    className="w-full h-24 p-2 bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-md text-sm focus:outline-none focus:border-cyan-500 resize-none"
                 />
                 <button
                     onClick={handleSubmit}
@@ -107,11 +107,13 @@ export const GhostwriterPanel: React.FC<GhostwriterPanelProps> = ({ status, patt
   };
 
   return (
-    <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-      <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">Ghostwriter</h2>
+    <div className="w-full h-full flex flex-col">
+      <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+        <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">Ghostwriter</h2>
+      </div>
       <div className="flex-1 flex flex-col min-h-0">
         {renderContent()}
       </div>
-    </aside>
+    </div>
   );
 };

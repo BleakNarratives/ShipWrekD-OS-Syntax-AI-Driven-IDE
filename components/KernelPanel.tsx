@@ -9,11 +9,13 @@ interface KernelPanelProps {
 
 export const KernelPanel: React.FC<KernelPanelProps> = ({ modules, onActivateModule }) => {
   return (
-    <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 p-2 flex-shrink-0 overflow-y-auto">
-      <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">System Kernel</h2>
-      <div className="p-2 space-y-4">
+    <div className="w-full h-full flex flex-col">
+      <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+        <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">System Kernel</h2>
+      </div>
+      <div className="flex-1 p-2 overflow-y-auto space-y-4">
         {modules.map(module => (
-          <div key={module.id} className="bg-[#161b22] border border-gray-700/50 rounded-lg p-3">
+          <div key={module.id} className="bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-lg p-3">
             <div className="flex items-center gap-3 mb-2">
               <Icon name={module.icon} className="w-6 h-6 text-cyan-400" />
               <h3 className="font-bold text-gray-200">{module.name}</h3>
@@ -35,6 +37,6 @@ export const KernelPanel: React.FC<KernelPanelProps> = ({ modules, onActivateMod
           </div>
         ))}
       </div>
-    </aside>
+    </div>
   );
 };

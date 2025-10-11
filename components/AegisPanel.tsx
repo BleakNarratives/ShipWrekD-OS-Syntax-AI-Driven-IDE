@@ -8,6 +8,8 @@ interface AegisPanelProps {
   components: MonitoredComponent[];
   onRunScan: () => void;
   onIsolate: (componentId: string) => void;
+  architecturalViolation: boolean;
+  onPurgeViolation: () => void;
 }
 
 const statusConfig: Record<AegisStatus, { color: string; icon: any; text: string; description: string }> = {
@@ -44,22 +46,42 @@ const severityColors: Record<string, string> = {
 };
 
 
-export const AegisPanel: React.FC<AegisPanelProps> = ({ status, logs, components, onRunScan, onIsolate }) => {
-  const currentStatus = statusConfig[status];
+export const AegisPanel: React.FC<AegisPanelProps> = ({ status, logs, components, onRunScan, onIsolate, architecturalViolation, onPurgeViolation }) => {
+  const effectiveStatus = architecturalViolation ? 'threat_detected' : status;
+  const currentStatus = statusConfig[effectiveStatus];
+  const statusDescription = architecturalViolation ? 'Architectural integrity has been compromised.' : currentStatus.description;
 
   return (
-    <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-      <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">Aegis Protocol</h2>
+    <div className="w-full h-full flex flex-col">
+      <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+        <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">Aegis Protocol</h2>
+      </div>
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 p-2 overflow-y-auto space-y-4">
-            <div className="p-3 bg-[#161b22] border border-gray-700/50 rounded-lg text-center">
+            <div className="p-3 bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-lg text-center">
                 <Icon name={currentStatus.icon} className={`w-12 h-12 mx-auto mb-2 ${currentStatus.color} ${status === 'scanning' ? 'animate-pulse' : ''}`} />
                 <h3 className={`font-bold ${currentStatus.color}`}>{currentStatus.text}</h3>
-                <p className="text-xs text-gray-500 mt-1">{currentStatus.description}</p>
+                <p className="text-xs text-gray-500 mt-1">{statusDescription}</p>
             </div>
 
+            {architecturalViolation && (
+                <div className="p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
+                    <h4 className="text-sm font-bold text-red-300 mb-2">Architectural Integrity Compromised</h4>
+                    <div className="p-2 border-l-4 rounded bg-gray-700/20 border-red-500">
+                        <p className="font-semibold text-red-300 text-sm">High Severity Threat</p>
+                        <p className="text-xs text-gray-400 mt-1">Redundant 'src' directory detected. This violates the established architectural mandate.</p>
+                        <p className="text-xs text-gray-500 mt-2">Directive: This regression has been relayed to ModMind for strategic review.</p>
+                        <button 
+                            onClick={onPurgeViolation}
+                            className="mt-3 w-full px-2 py-1 bg-red-500/20 text-red-300 rounded hover:bg-red-500/40 text-xs font-bold">
+                            Purge Regression
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {logs.length > 0 && (
-                 <div className="p-3 bg-[#161b22] border border-gray-700/50 rounded-lg">
+                 <div className="p-3 bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-lg">
                     <h4 className="text-xs uppercase text-gray-400 font-bold px-1 mb-2">Threat Logs</h4>
                     <ul className="space-y-2">
                         {logs.map(log => (
@@ -78,7 +100,7 @@ export const AegisPanel: React.FC<AegisPanelProps> = ({ status, logs, components
                 </div>
             )}
 
-            <div className="p-3 bg-[#161b22] border border-gray-700/50 rounded-lg">
+            <div className="p-3 bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-lg">
                 <h4 className="text-xs uppercase text-gray-400 font-bold px-1 mb-2">Monitored Components</h4>
                 <ul className="space-y-1">
                     {components.map(comp => (
@@ -95,17 +117,17 @@ export const AegisPanel: React.FC<AegisPanelProps> = ({ status, logs, components
             </div>
         </div>
         
-        <div className="p-2 border-t border-gray-700/50">
+        <div className="p-2 border-t border-[var(--color-border-base)]">
           <button
             onClick={onRunScan}
             disabled={status === 'scanning'}
-            className="w-full mt-2 px-3 py-2 bg-cyan-600/80 text-white rounded hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm font-bold flex items-center justify-center gap-2"
+            className="w-full px-3 py-2 bg-cyan-600/80 text-white rounded hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm font-bold flex items-center justify-center gap-2"
           >
             <Icon name="aegis" className="w-5 h-5" />
             Run Manual Scan
           </button>
         </div>
       </div>
-    </aside>
+    </div>
   );
 };

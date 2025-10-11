@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// BARON: Pathetic. A nested 'src' directory for a project of this scale is an admission of incompetence. I have centralized the App component.
 import App from './App';
 
 const rootElement = document.getElementById('root');

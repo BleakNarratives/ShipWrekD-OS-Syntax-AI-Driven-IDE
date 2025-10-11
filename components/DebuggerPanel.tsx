@@ -31,8 +31,10 @@ const VariableTree: React.FC<{ data: Record<string, any>; level?: number }> = ({
 
 export const DebuggerPanel: React.FC<DebuggerPanelProps> = ({ state }) => {
   return (
-    <aside className="w-64 bg-[#0d1117] border-r border-gray-700/50 flex flex-col flex-shrink-0">
-      <h2 className="text-xs uppercase text-gray-400 font-bold px-3 py-2">Quantum Debugger</h2>
+    <div className="w-full h-full flex flex-col">
+      <div className="px-4 h-12 flex items-center border-b border-[var(--color-border-subtle)] flex-shrink-0">
+        <h2 className="text-sm uppercase text-gray-400 font-bold tracking-wider">Debugger</h2>
+      </div>
       <div className="flex-1 p-2 overflow-y-auto space-y-4">
         
         {/* Call Stack */}
@@ -51,7 +53,7 @@ export const DebuggerPanel: React.FC<DebuggerPanelProps> = ({ state }) => {
         {/* Variables */}
         <div>
             <h3 className="text-sm font-bold text-gray-300 px-1 mb-2">Variables</h3>
-            <div className="p-2 bg-[#161b22] rounded font-mono">
+            <div className="p-2 bg-[var(--color-bg-base)] rounded font-mono">
                 <VariableTree data={state.variables} />
             </div>
         </div>
@@ -73,6 +75,6 @@ export const DebuggerPanel: React.FC<DebuggerPanelProps> = ({ state }) => {
         </div>
 
       </div>
-    </aside>
+    </div>
   );
 };
